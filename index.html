@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Investor — Aplikasi Introspeksi UMKM</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous"></script>
+<style>
+:root{--gold:#e3b959;--gold-dim:#b98f3e;--bg:#0f1115;--card:#1b1e26;--card2:#232733;--text:#e8e6e1;--muted:#a9a49a;--line:#2e3340;--ok:#7fc98f;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55}
+.wrap{max-width:860px;margin:0 auto;padding:16px 16px 64px}
+header{text-align:center;padding:18px 0 8px}
+header h1{margin:0;font-size:26px;color:var(--gold);letter-spacing:.3px}
+header .sub{color:var(--muted);font-size:14px;margin-top:4px}
+header .dev{color:var(--muted);font-size:12.5px;margin-top:10px}
+header .dev b{color:var(--text)}
+.layar{display:none}
+.layar.aktif{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+.card h2{margin:0 0 6px;font-size:19px;color:var(--gold)}
+.card h3{margin:0 0 6px;font-size:16px;color:var(--gold)}
+.muted{color:var(--muted);font-size:14px}
+.kecil{font-size:13px;color:var(--muted)}
+label{display:block;font-size:14px;margin:12px 0 4px;color:var(--text)}
+input,select,textarea{width:100%;background:#10131a;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px 12px;font-size:15px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--gold-dim);border-color:var(--gold)}
+textarea{min-height:84px;resize:vertical}
+select[multiple]{min-height:130px}
+button{cursor:pointer;font-family:inherit}
+.btn{display:inline-block;background:var(--gold);color:#171207;border:0;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:700;margin-top:14px}
+.btn:hover{filter:brightness(1.08)}
+.btn-ghost{background:transparent;color:var(--gold);border:1px solid var(--gold-dim);border-radius:10px;padding:10px 16px;font-size:14px;margin-top:14px}
+.btn-kecil{padding:8px 12px;font-size:13.5px;margin-top:8px}
+.tombol-link{background:none;border:0;color:var(--gold);text-decoration:underline;font-size:14px;padding:6px 0;cursor:pointer}
+.bar-akun{display:none;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:10px 0}
+.bar-akun.tampil{display:flex}
+.bar-akun .siapa{font-size:13.5px;color:var(--muted)}
+.bar-akun .tombol{display:flex;gap:8px;flex-wrap:wrap}
+.bar-akun .btn-ghost{margin-top:0}
+.filter{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media(max-width:560px){.filter{grid-template-columns:1fr}}
+.pemberitahuan{background:#26200f;border:1px solid var(--gold-dim);color:#f0d48a;border-radius:12px;padding:14px 16px;margin:14px 0;font-size:14.5px}
+.spanduk-contoh{background:#26200f;border:1px dashed var(--gold);color:#f0d48a;border-radius:12px;padding:12px 16px;margin:14px 0;font-size:14.5px;text-align:center}
+.lencana{display:inline-block;background:#26200f;color:var(--gold);border:1px solid var(--gold-dim);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
+.kartu{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0;cursor:pointer}
+.kartu:hover{border-color:var(--gold-dim)}
+.kartu.contoh{border-style:dashed;cursor:pointer}
+.kartu .judul-kartu{font-size:17px;font-weight:700}
+.kartu .meta{color:var(--muted);font-size:13.5px;margin-top:2px}
+.skor{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.kotak-skor{flex:1;min-width:90px;background:var(--card2);border-radius:10px;padding:10px;text-align:center}
+.kotak-skor .angka{font-size:22px;font-weight:800;color:var(--gold)}
+.kotak-skor .nama{font-size:12px;color:var(--muted)}
+.valuasi{margin-top:12px;font-size:16px;font-weight:700}
+.valuasi span{color:var(--gold)}
+.kesenjangan{margin-top:10px;font-size:14px}
+.kesenjangan .tag{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:12.5px;margin:3px 4px 0 0}
+.rincian{margin-top:6px}
+.rincian dt{color:var(--muted);font-size:13px;margin-top:10px}
+.rincian dd{margin:2px 0 0;font-size:15px}
+.status-pill{display:inline-block;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700}
+.status-baru{background:#26200f;color:#f0d48a;border:1px solid var(--gold-dim)}
+.status-diterima{background:#12291a;color:var(--ok);border:1px solid #2c5a3a}
+.status-ditolak{background:#2b1a1a;color:#e08f8f;border:1px solid #5a2c2c}
+.ceklis label{display:flex;gap:8px;align-items:flex-start;margin:7px 0;font-size:14.5px}
+.ceklis input{width:auto;margin-top:3px}
+.popup-latar{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
+.popup-latar.tampil{display:flex}
+.popup{background:var(--card);border:1px solid var(--gold-dim);border-radius:16px;max-width:440px;width:100%;padding:22px}
+.popup h3{margin:0 0 8px;color:var(--gold);font-size:18px}
+.popup p{margin:0 0 6px;font-size:15px}
+.popup .btn{width:100%}
+.tengah{text-align:center}
+.jejak{font-size:13.5px;color:var(--muted);padding-left:18px}
+.jejak li{margin:3px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Portal Investor</h1>
+<div class="sub">Aplikasi Introspeksi UMKM — membaca peluang kerjasama investasi dari usaha yang siap</div>
+<div class="dev">Dikembangkan oleh <b>Dr. Ir. Soegianto Soelistiono, M.Si.</b><br>Lab Sistem Cerdas Fisika, FST Universitas Airlangga</div>
+</header>
+
+<div class="bar-akun" id="bar-akun">
+  <div class="siapa" id="bar-akun-siapa"></div>
+  <div class="tombol">
+    <button class="btn-ghost" id="btn-nav-daftar" type="button">Daftar usaha</button>
+    <button class="btn-ghost" id="btn-nav-minat" type="button">Minat saya</button>
+    <button class="btn-ghost" id="btn-keluar" type="button">Keluar</button>
+  </div>
+</div>
+
+<!-- MASUK / DAFTAR -->
+<section class="layar" id="layar-masuk">
+  <div class="card">
+    <h2>Masuk Portal Investor</h2>
+    <p class="muted">Portal ini untuk investor yang ingin membaca peluang kerjasama investasi dari UMKM yang sudah dinilai siap oleh pemiliknya.</p>
+    <label for="msk-email">Email</label>
+    <input id="msk-email" type="email" placeholder="contoh: nama@email.com" autocomplete="email">
+    <label for="msk-sandi">Kata sandi</label>
+    <input id="msk-sandi" type="password" placeholder="Minimal 6 karakter" autocomplete="current-password">
+    <p class="kecil">Kata sandi ini khusus untuk aplikasi ini, bukan kata sandi email Anda.</p>
+    <button class="btn" id="btn-masuk" type="button">Masuk</button>
+    <button class="btn-ghost" id="btn-ke-daftar" type="button">Daftar sebagai investor</button>
+    <br>
+    <button class="tombol-link" id="btn-ke-lupa" type="button">Lupa kata sandi?</button>
+  </div>
+  <div class="card" id="kartu-daftar" style="display:none">
+    <h2>Daftar sebagai investor</h2>
+    <p class="muted">Setelah daftar, kami mengirim tautan konfirmasi ke email Anda. Konfirmasi dulu sebelum masuk pertama.</p>
+    <label for="dft-email">Email</label>
+    <input id="dft-email" type="email" placeholder="contoh: nama@email.com" autocomplete="email">
+    <label for="dft-sandi">Kata sandi</label>
+    <input id="dft-sandi" type="password" placeholder="Minimal 6 karakter" autocomplete="new-password">
+    <p class="kecil">Kata sandi ini khusus untuk aplikasi ini, bukan kata sandi email Anda.</p>
+    <button class="btn" id="btn-daftar" type="button">Buat akun investor</button>
+    <button class="btn-ghost" id="btn-batal-daftar" type="button">Batal</button>
+  </div>
+  <div class="card">
+    <h3>Bagaimana cara membaca peluang di sini?</h3>
+    <p class="muted">Pemilik usaha membagikan ringkasan usahanya atas pilihannya sendiri. Anda melihat sektor, wilayah, level, skor, rentang valuasi, dan kesenjangan utama — tanpa nama pemilik, tanpa alamat rinci, tanpa kontak, dan tanpa laporan transaksi. Bila tertarik, nyatakan minat Anda; pemilik yang memutuskan jawabannya.</p>
+    <p class="muted">Angka valuasi adalah rentang, bukan harga pasti. Nilai akhir selalu ditentukan kesepakatan Anda dengan pemilik usaha.</p>
+  </div>
+</section>
+
+<!-- MENUNGGU KONFIRMASI EMAIL -->
+<section class="layar" id="layar-konfirmasi">
+  <div class="card tengah">
+    <h2>Periksa email Anda</h2>
+    <p class="muted" id="teks-konfirmasi">Kami mengirim tautan konfirmasi ke email Anda. Buka email itu dan ketuk tautannya, lalu kembali ke sini untuk masuk.</p>
+    <p class="kecil">Belum menerima email? Periksa folder spam, lalu coba masuk lagi — bila akun sudah dikonfirmasi, Anda langsung masuk.</p>
+    <button class="btn" id="btn-konfirmasi-ke-masuk" type="button">Saya sudah konfirmasi — masuk</button>
+  </div>
+</section>
+
+<!-- LUPA KATA SANDI -->
+<section class="layar" id="layar-lupa">
+  <div class="card">
+    <h2>Lupa kata sandi?</h2>
+    <p class="muted">Masukkan email akun Anda. Kami mengirim tautan untuk membuat kata sandi baru.</p>
+    <label for="lupa-email">Email</label>
+    <input id="lupa-email" type="email" placeholder="contoh: nama@email.com" autocomplete="email">
+    <button class="btn" id="btn-kirim-reset" type="button">Kirim tautan</button>
+    <button class="btn-ghost" id="btn-lupa-ke-masuk" type="button">Kembali masuk</button>
+  </div>
+</section>
+
+<!-- KATA SANDI BARU (dari tautan email) -->
+<section class="layar" id="layar-sandi-baru">
+  <div class="card">
+    <h2>Buat kata sandi baru</h2>
+    <p class="muted">Masukkan kata sandi baru untuk akun investor Anda.</p>
+    <label for="baru-sandi">Kata sandi baru</label>
+    <input id="baru-sandi" type="password" placeholder="Minimal 6 karakter" autocomplete="new-password">
+    <label for="baru-sandi2">Ulangi kata sandi baru</label>
+    <input id="baru-sandi2" type="password" placeholder="Ketik ulang kata sandi baru" autocomplete="new-password">
+    <p class="kecil">Kata sandi ini khusus untuk aplikasi ini, bukan kata sandi email Anda.</p>
+    <button class="btn" id="btn-simpan-sandi" type="button">Simpan kata sandi baru</button>
+  </div>
+</section>
+
+<!-- PROFIL INVESTOR -->
+<section class="layar" id="layar-profil">
+  <div class="card">
+    <h2>Profil investor</h2>
+    <p class="muted">Lengkapi profil Anda. Data ini dipakai agar pemilik usaha tahu siapa yang menyatakan minat.</p>
+    <label for="pf-nama">Nama lengkap</label>
+    <input id="pf-nama" type="text" placeholder="contoh: Budi Santoso">
+    <label for="pf-lembaga">Lembaga / perusahaan (boleh dikosongkan)</label>
+    <input id="pf-lembaga" type="text" placeholder="contoh: Koperasi Maju Bersama">
+    <label>Fokus sektor (boleh lebih dari satu)</label>
+    <div class="ceklis" id="pf-sektor"></div>
+    <label for="pf-provinsi">Fokus provinsi (boleh lebih dari satu)</label>
+    <select id="pf-provinsi" multiple></select>
+    <p class="kecil">Pilih dengan menahan tombol Ctrl (Windows) atau Cmd (Mac) saat mengeklik.</p>
+    <button class="btn" id="btn-simpan-profil" type="button">Simpan profil</button>
+  </div>
+</section>
+
+<!-- DAFTAR USAHA -->
+<section class="layar" id="layar-daftar">
+  <div class="card">
+    <h2>Usaha siap investasi</h2>
+    <p class="muted">Usaha di bawah ini ditampilkan atas izin pemiliknya. Data tampil tanpa nama pemilik, alamat rinci, dan kontak.</p>
+    <div class="filter">
+      <div>
+        <label for="flt-sektor">Sektor</label>
+        <select id="flt-sektor"></select>
+      </div>
+      <div>
+        <label for="flt-provinsi">Provinsi</label>
+        <select id="flt-provinsi"></select>
+      </div>
+      <div>
+        <label for="flt-kota">Kota / Kabupaten</label>
+        <select id="flt-kota" disabled></select>
+      </div>
+      <div>
+        <label for="flt-skor">Skor Siap Investasi minimum</label>
+        <select id="flt-skor">
+          <option value="0">Semua skor</option>
+          <option value="40">40 ke atas</option>
+          <option value="50">50 ke atas</option>
+          <option value="60">60 ke atas</option>
+          <option value="70">70 ke atas</option>
+        </select>
+      </div>
+      <div>
+        <label for="flt-urut">Urutkan</label>
+        <select id="flt-urut">
+          <option value="siap">Skor Siap Investasi tertinggi</option>
+          <option value="valuasi">Valuasi tertinggi</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div id="pemberitahuan-cloud" style="display:none"></div>
+  <div id="wadah-kosong" style="display:none">
+    <div class="card tengah">
+      <h2>Belum ada usaha yang ditampilkan ke investor</h2>
+      <p class="muted">Saat ini belum ada usaha nyata yang memilih tampil di portal ini. Sambil menunggu, Anda dapat melihat contoh tampilan di bawah.</p>
+    </div>
+  </div>
+  <div id="wadah-daftar"></div>
+  <div id="wadah-contoh" style="display:none">
+    <div class="spanduk-contoh"><b>Data contoh</b> — tiga usaha di bawah ini hanya contoh tampilan, bukan usaha nyata. Angka-angkanya contoh, bukan data usaha sungguhan.</div>
+    <div class="card"><h2>Contoh tampilan</h2><p class="muted">Beginilah kartu usaha akan tampak bila sudah ada usaha nyata yang tampil. Minat pada data contoh tidak disimpan.</p></div>
+    <div id="daftar-contoh"></div>
+  </div>
+  <div class="tengah" id="wadah-lihat-contoh" style="display:none">
+    <button class="tombol-link" id="btn-lihat-contoh" type="button">Lihat contoh tampilan</button>
+  </div>
+</section>
+
+<!-- DETAIL USAHA -->
+<section class="layar" id="layar-detail">
+  <div class="card">
+    <button class="btn-ghost btn-kecil" id="btn-detail-kembali" type="button">‹ Kembali ke daftar</button>
+    <h2 id="dt-judul" style="margin-top:14px">Ringkasan usaha</h2>
+    <div id="dt-badan"></div>
+  </div>
+  <div class="card" id="kartu-minat">
+    <h2>Nyatakan minat</h2>
+    <p class="muted">Pesan Anda diteruskan ke pemilik usaha. Pemilik yang memutuskan menerima atau menolak.</p>
+    <div id="minat-form">
+      <label for="minat-pesan">Pesan untuk pemilik (boleh dikosongkan)</label>
+      <textarea id="minat-pesan" placeholder="contoh: Saya tertarik bekerja sama. Bolehkah kita berdiskusi lebih lanjut?"></textarea>
+      <label for="minat-dana">Dana investasi yang diminati (Rp, boleh dikosongkan)</label>
+      <input id="minat-dana" type="number" min="0" step="100000" placeholder="contoh: 100000000">
+      <button class="btn" id="btn-kirim-minat" type="button">Kirim minat saya</button>
+    </div>
+    <div id="minat-status" style="display:none"></div>
+  </div>
+</section>
+
+<!-- MINAT SAYA -->
+<section class="layar" id="layar-minat">
+  <div class="card">
+    <h2>Minat saya</h2>
+    <p class="muted">Daftar minat kerjasama investasi yang pernah Anda nyatakan, beserta jawabannya.</p>
+  </div>
+  <div id="wadah-minat"></div>
+  <div class="tengah"><button class="btn-ghost" id="btn-minat-ke-daftar" type="button">Kembali ke daftar usaha</button></div>
+</section>
+
+<!-- TAUTAN BERBAGI -->
+<section class="layar" id="layar-bagikan">
+  <div class="card">
+    <h2>Snapshot usaha yang dibagikan</h2>
+    <p class="muted">Ringkasan ini dibagikan langsung oleh pemilik usaha melalui tautan. Tampilan ini hanya untuk dibaca.</p>
+    <div id="bg-badan"></div>
+  </div>
+  <div class="card tengah">
+    <p class="muted">Ingin melihat lebih banyak usaha siap investasi? Masuk sebagai investor untuk membuka daftar lengkap.</p>
+    <button class="btn" id="btn-bagikan-ke-masuk" type="button">Masuk Portal Investor</button>
+  </div>
+</section>
+
+</div>
+
+<!-- POPUP RAMAH -->
+<div class="popup-latar" id="popup-latar">
+  <div class="popup" role="dialog" aria-modal="true">
+    <h3 id="popup-judul"></h3>
+    <p id="popup-isi"></p>
+    <button class="btn" id="popup-tombol" type="button">Mengerti</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* Portal Investor — Aplikasi Introspeksi UMKM (satu file statis).
+   Data tampil tanpa nama pemilik, alamat rinci, kontak, transaksi, atau foto.
+   Angka valuasi adalah rentang; nilai akhir ditentukan kesepakatan dengan pemilik. */
+
+var APP_URL = "https://portal-investor-umkm.vercel.app/";
+var CLOUD_URL = "https://bdnqsxwypbrdiwaxydoh.supabase.co";
+var CLOUD_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbnFzeHd5cGJyZGl3YXh5ZG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1OTQ3NDUsImV4cCI6MjExMDE3MDc0NX0.MsdIzw-CAqJiBp3McXZ-6XLzLakmo0S5w7RhHHXMCQc";
+var sb = null;
+try { sb = window.supabase.createClient(CLOUD_URL, CLOUD_ANON); } catch (e) { sb = null; }
+
+        var WILAYAH = {"Aceh": ["Kabupaten Aceh Barat", "Kabupaten Aceh Barat Daya", "Kabupaten Aceh Besar", "Kabupaten Aceh Jaya", "Kabupaten Aceh Selatan", "Kabupaten Aceh Singkil", "Kabupaten Aceh Tamiang", "Kabupaten Aceh Tengah", "Kabupaten Aceh Tenggara", "Kabupaten Aceh Timur", "Kabupaten Aceh Utara", "Kabupaten Bener Meriah", "Kabupaten Bireuen", "Kabupaten Gayo Lues", "Kabupaten Nagan Raya", "Kabupaten Pidie", "Kabupaten Pidie Jaya", "Kabupaten Simeulue", "Kota Banda Aceh", "Kota Langsa", "Kota Lhokseumawe", "Kota Sabang", "Kota Subulussalam"], "Sumatera Utara": ["Kabupaten Asahan", "Kabupaten Batu Bara", "Kabupaten Dairi", "Kabupaten Deli Serdang", "Kabupaten Humbang Hasundutan", "Kabupaten Karo", "Kabupaten Labuhanbatu", "Kabupaten Labuhanbatu Selatan", "Kabupaten Labuhanbatu Utara", "Kabupaten Langkat", "Kabupaten Mandailing Natal", "Kabupaten Nias", "Kabupaten Nias Barat", "Kabupaten Nias Selatan", "Kabupaten Nias Utara", "Kabupaten Padang Lawas", "Kabupaten Padang Lawas Utara", "Kabupaten Pakpak Bharat", "Kabupaten Samosir", "Kabupaten Serdang Bedagai", "Kabupaten Simalungun", "Kabupaten Tapanuli Selatan", "Kabupaten Tapanuli Tengah", "Kabupaten Tapanuli Utara", "Kabupaten Toba", "Kota Binjai", "Kota Gunungsitoli", "Kota Medan", "Kota Padangsidimpuan", "Kota Pematangsiantar", "Kota Sibolga", "Kota Tanjungbalai", "Kota Tebing Tinggi"], "Sumatera Barat": ["Kabupaten Agam", "Kabupaten Dharmasraya", "Kabupaten Kepulauan Mentawai", "Kabupaten Lima Puluh Kota", "Kabupaten Padang Pariaman", "Kabupaten Pasaman", "Kabupaten Pasaman Barat", "Kabupaten Pesisir Selatan", "Kabupaten Sijunjung", "Kabupaten Solok", "Kabupaten Solok Selatan", "Kabupaten Tanah Datar", "Kota Bukittinggi", "Kota Padang", "Kota Padang Panjang", "Kota Pariaman", "Kota Payakumbuh", "Kota Sawahlunto", "Kota Solok"], "Riau": ["Kabupaten Bengkalis", "Kabupaten Indragiri Hilir", "Kabupaten Indragiri Hulu", "Kabupaten Kampar", "Kabupaten Kepulauan Meranti", "Kabupaten Kuantan Singingi", "Kabupaten Pelalawan", "Kabupaten Rokan Hilir", "Kabupaten Rokan Hulu", "Kabupaten Siak", "Kota Dumai", "Kota Pekanbaru"], "Jambi": ["Kabupaten Batanghari", "Kabupaten Bungo", "Kabupaten Kerinci", "Kabupaten Merangin", "Kabupaten Muaro Jambi", "Kabupaten Sarolangun", "Kabupaten Tanjung Jabung Barat", "Kabupaten Tanjung Jabung Timur", "Kabupaten Tebo", "Kota Jambi", "Kota Sungai Penuh"], "Sumatera Selatan": ["Kabupaten Banyuasin", "Kabupaten Empat Lawang", "Kabupaten Lahat", "Kabupaten Muara Enim", "Kabupaten Musi Banyuasin", "Kabupaten Musi Rawas", "Kabupaten Musi Rawas Utara", "Kabupaten Ogan Ilir", "Kabupaten Ogan Komering Ilir", "Kabupaten Ogan Komering Ulu", "Kabupaten Ogan Komering Ulu Selatan", "Kabupaten Ogan Komering Ulu Timur", "Kabupaten Penukal Abab Lematang Ilir", "Kota Lubuk Linggau", "Kota Pagaralam", "Kota Palembang", "Kota Prabumulih"], "Bengkulu": ["Kabupaten Bengkulu Selatan", "Kabupaten Bengkulu Tengah", "Kabupaten Bengkulu Utara", "Kabupaten Kaur", "Kabupaten Kepahiang", "Kabupaten Lebong", "Kabupaten Mukomuko", "Kabupaten Rejang Lebong", "Kabupaten Seluma", "Kota Bengkulu"], "Lampung": ["Kabupaten Lampung Barat", "Kabupaten Lampung Selatan", "Kabupaten Lampung Tengah", "Kabupaten Lampung Timur", "Kabupaten Lampung Utara", "Kabupaten Mesuji", "Kabupaten Pesawaran", "Kabupaten Pesisir Barat", "Kabupaten Pringsewu", "Kabupaten Tanggamus", "Kabupaten Tulang Bawang", "Kabupaten Tulang Bawang Barat", "Kabupaten Way Kanan", "Kota Bandar Lampung", "Kota Metro"], "Kepulauan Bangka Belitung": ["Kabupaten Bangka", "Kabupaten Bangka Barat", "Kabupaten Bangka Selatan", "Kabupaten Bangka Tengah", "Kabupaten Belitung", "Kabupaten Belitung Timur", "Kota Pangkalpinang"], "Kepulauan Riau": ["Kabupaten Bintan", "Kabupaten Karimun", "Kabupaten Kepulauan Anambas", "Kabupaten Lingga", "Kabupaten Natuna", "Kota Batam", "Kota Tanjungpinang"], "DKI Jakarta": ["Kabupaten Administrasi Kepulauan Seribu", "Kota Administrasi Jakarta Barat", "Kota Administrasi Jakarta Pusat", "Kota Administrasi Jakarta Selatan", "Kota Administrasi Jakarta Timur", "Kota Administrasi Jakarta Utara"], "Jawa Barat": ["Kabupaten Bandung", "Kabupaten Bandung Barat", "Kabupaten Bekasi", "Kabupaten Bogor", "Kabupaten Ciamis", "Kabupaten Cianjur", "Kabupaten Cirebon", "Kabupaten Garut", "Kabupaten Indramayu", "Kabupaten Karawang", "Kabupaten Kuningan", "Kabupaten Majalengka", "Kabupaten Pangandaran", "Kabupaten Purwakarta", "Kabupaten Subang", "Kabupaten Sukabumi", "Kabupaten Sumedang", "Kabupaten Tasikmalaya", "Kota Bandung", "Kota Banjar", "Kota Bekasi", "Kota Bogor", "Kota Cimahi", "Kota Cirebon", "Kota Depok", "Kota Sukabumi", "Kota Tasikmalaya"], "Jawa Tengah": ["Kabupaten Banjarnegara", "Kabupaten Banyumas", "Kabupaten Batang", "Kabupaten Blora", "Kabupaten Boyolali", "Kabupaten Brebes", "Kabupaten Cilacap", "Kabupaten Demak", "Kabupaten Grobogan", "Kabupaten Jepara", "Kabupaten Karanganyar", "Kabupaten Kebumen", "Kabupaten Kendal", "Kabupaten Klaten", "Kabupaten Kudus", "Kabupaten Magelang", "Kabupaten Pati", "Kabupaten Pekalongan", "Kabupaten Pemalang", "Kabupaten Purbalingga", "Kabupaten Purworejo", "Kabupaten Rembang", "Kabupaten Semarang", "Kabupaten Sragen", "Kabupaten Sukoharjo", "Kabupaten Tegal", "Kabupaten Temanggung", "Kabupaten Wonogiri", "Kabupaten Wonosobo", "Kota Magelang", "Kota Pekalongan", "Kota Salatiga", "Kota Semarang", "Kota Surakarta", "Kota Tegal"], "DI Yogyakarta": ["Kabupaten Bantul", "Kabupaten Gunungkidul", "Kabupaten Kulon Progo", "Kabupaten Sleman", "Kota Yogyakarta"], "Jawa Timur": ["Kabupaten Bangkalan", "Kabupaten Banyuwangi", "Kabupaten Blitar", "Kabupaten Bojonegoro", "Kabupaten Bondowoso", "Kabupaten Gresik", "Kabupaten Jember", "Kabupaten Jombang", "Kabupaten Kediri", "Kabupaten Lamongan", "Kabupaten Lumajang", "Kabupaten Madiun", "Kabupaten Magetan", "Kabupaten Malang", "Kabupaten Mojokerto", "Kabupaten Nganjuk", "Kabupaten Ngawi", "Kabupaten Pacitan", "Kabupaten Pamekasan", "Kabupaten Pasuruan", "Kabupaten Ponorogo", "Kabupaten Probolinggo", "Kabupaten Sampang", "Kabupaten Sidoarjo", "Kabupaten Situbondo", "Kabupaten Sumenep", "Kabupaten Trenggalek", "Kabupaten Tuban", "Kabupaten Tulungagung", "Kota Batu", "Kota Blitar", "Kota Kediri", "Kota Madiun", "Kota Malang", "Kota Mojokerto", "Kota Pasuruan", "Kota Probolinggo", "Kota Surabaya"], "Banten": ["Kabupaten Lebak", "Kabupaten Pandeglang", "Kabupaten Serang", "Kabupaten Tangerang", "Kota Cilegon", "Kota Serang", "Kota Tangerang", "Kota Tangerang Selatan"], "Bali": ["Kabupaten Badung", "Kabupaten Bangli", "Kabupaten Buleleng", "Kabupaten Gianyar", "Kabupaten Jembrana", "Kabupaten Karangasem", "Kabupaten Klungkung", "Kabupaten Tabanan", "Kota Denpasar"], "Nusa Tenggara Barat": ["Kabupaten Bima", "Kabupaten Dompu", "Kabupaten Lombok Barat", "Kabupaten Lombok Tengah", "Kabupaten Lombok Timur", "Kabupaten Lombok Utara", "Kabupaten Sumbawa", "Kabupaten Sumbawa Barat", "Kota Bima", "Kota Mataram"], "Nusa Tenggara Timur": ["Kabupaten Alor", "Kabupaten Belu", "Kabupaten Ende", "Kabupaten Flores Timur", "Kabupaten Kupang", "Kabupaten Lembata", "Kabupaten Malaka", "Kabupaten Manggarai", "Kabupaten Manggarai Barat", "Kabupaten Manggarai Timur", "Kabupaten Nagekeo", "Kabupaten Ngada", "Kabupaten Rote Ndao", "Kabupaten Sabu Raijua", "Kabupaten Sikka", "Kabupaten Sumba Barat", "Kabupaten Sumba Barat Daya", "Kabupaten Sumba Tengah", "Kabupaten Sumba Timur", "Kabupaten Timor Tengah Selatan", "Kabupaten Timor Tengah Utara", "Kota Kupang"], "Kalimantan Barat": ["Kabupaten Bengkayang", "Kabupaten Kapuas Hulu", "Kabupaten Kayong Utara", "Kabupaten Ketapang", "Kabupaten Kubu Raya", "Kabupaten Landak", "Kabupaten Melawi", "Kabupaten Mempawah", "Kabupaten Sambas", "Kabupaten Sanggau", "Kabupaten Sekadau", "Kabupaten Sintang", "Kota Pontianak", "Kota Singkawang"], "Kalimantan Tengah": ["Kabupaten Barito Selatan", "Kabupaten Barito Timur", "Kabupaten Barito Utara", "Kabupaten Gunung Mas", "Kabupaten Kapuas", "Kabupaten Katingan", "Kabupaten Kotawaringin Barat", "Kabupaten Kotawaringin Timur", "Kabupaten Lamandau", "Kabupaten Murung Raya", "Kabupaten Pulang Pisau", "Kabupaten Seruyan", "Kabupaten Sukamara", "Kota Palangka Raya"], "Kalimantan Selatan": ["Kabupaten Balangan", "Kabupaten Banjar", "Kabupaten Barito Kuala", "Kabupaten Hulu Sungai Selatan", "Kabupaten Hulu Sungai Tengah", "Kabupaten Hulu Sungai Utara", "Kabupaten Kotabaru", "Kabupaten Tabalong", "Kabupaten Tanah Bumbu", "Kabupaten Tanah Laut", "Kabupaten Tapin", "Kota Banjarbaru", "Kota Banjarmasin"], "Kalimantan Timur": ["Kabupaten Berau", "Kabupaten Kutai Barat", "Kabupaten Kutai Kartanegara", "Kabupaten Kutai Timur", "Kabupaten Mahakam Ulu", "Kabupaten Paser", "Kabupaten Penajam Paser Utara", "Kota Balikpapan", "Kota Bontang", "Kota Samarinda"], "Kalimantan Utara": ["Kabupaten Bulungan", "Kabupaten Malinau", "Kabupaten Nunukan", "Kabupaten Tana Tidung", "Kota Tarakan"], "Sulawesi Utara": ["Kabupaten Bolaang Mongondow", "Kabupaten Bolaang Mongondow Selatan", "Kabupaten Bolaang Mongondow Timur", "Kabupaten Bolaang Mongondow Utara", "Kabupaten Kepulauan Sangihe", "Kabupaten Kepulauan Siau Tagulandang Biaro", "Kabupaten Kepulauan Talaud", "Kabupaten Minahasa", "Kabupaten Minahasa Selatan", "Kabupaten Minahasa Tenggara", "Kabupaten Minahasa Utara", "Kota Bitung", "Kota Kotamobagu", "Kota Manado", "Kota Tomohon"], "Sulawesi Tengah": ["Kabupaten Banggai", "Kabupaten Banggai Kepulauan", "Kabupaten Banggai Laut", "Kabupaten Buol", "Kabupaten Donggala", "Kabupaten Morowali", "Kabupaten Morowali Utara", "Kabupaten Parigi Moutong", "Kabupaten Poso", "Kabupaten Sigi", "Kabupaten Tojo Una-Una", "Kabupaten Tolitoli", "Kota Palu"], "Sulawesi Selatan": ["Kabupaten Bantaeng", "Kabupaten Barru", "Kabupaten Bone", "Kabupaten Bulukumba", "Kabupaten Enrekang", "Kabupaten Gowa", "Kabupaten Jeneponto", "Kabupaten Kepulauan Selayar", "Kabupaten Luwu", "Kabupaten Luwu Timur", "Kabupaten Luwu Utara", "Kabupaten Maros", "Kabupaten Pangkajene dan Kepulauan", "Kabupaten Pinrang", "Kabupaten Sidenreng Rappang", "Kabupaten Sinjai", "Kabupaten Soppeng", "Kabupaten Takalar", "Kabupaten Tana Toraja", "Kabupaten Toraja Utara", "Kabupaten Wajo", "Kota Makassar", "Kota Parepare", "Kota Palopo"], "Sulawesi Tenggara": ["Kabupaten Bombana", "Kabupaten Buton", "Kabupaten Buton Selatan", "Kabupaten Buton Tengah", "Kabupaten Buton Utara", "Kabupaten Kolaka", "Kabupaten Kolaka Timur", "Kabupaten Kolaka Utara", "Kabupaten Konawe", "Kabupaten Konawe Kepulauan", "Kabupaten Konawe Selatan", "Kabupaten Konawe Utara", "Kabupaten Muna", "Kabupaten Muna Barat", "Kabupaten Wakatobi", "Kota Baubau", "Kota Kendari"], "Gorontalo": ["Kabupaten Boalemo", "Kabupaten Bone Bolango", "Kabupaten Gorontalo", "Kabupaten Gorontalo Utara", "Kabupaten Pohuwato", "Kota Gorontalo"], "Sulawesi Barat": ["Kabupaten Majene", "Kabupaten Mamasa", "Kabupaten Mamuju", "Kabupaten Mamuju Tengah", "Kabupaten Pasangkayu", "Kabupaten Polewali Mandar"], "Maluku": ["Kabupaten Buru", "Kabupaten Buru Selatan", "Kabupaten Kepulauan Aru", "Kabupaten Kepulauan Tanimbar", "Kabupaten Maluku Barat Daya", "Kabupaten Maluku Tengah", "Kabupaten Maluku Tenggara", "Kabupaten Seram Bagian Barat", "Kabupaten Seram Bagian Timur", "Kota Ambon", "Kota Tual"], "Maluku Utara": ["Kabupaten Halmahera Barat", "Kabupaten Halmahera Selatan", "Kabupaten Halmahera Tengah", "Kabupaten Halmahera Timur", "Kabupaten Halmahera Utara", "Kabupaten Kepulauan Sula", "Kabupaten Pulau Morotai", "Kabupaten Pulau Taliabu", "Kota Ternate", "Kota Tidore Kepulauan"], "Papua": ["Kabupaten Biak Numfor", "Kabupaten Jayapura", "Kabupaten Keerom", "Kabupaten Kepulauan Yapen", "Kabupaten Mamberamo Raya", "Kabupaten Sarmi", "Kabupaten Supiori", "Kabupaten Waropen", "Kota Jayapura"], "Papua Barat": ["Kabupaten Fakfak", "Kabupaten Kaimana", "Kabupaten Manokwari", "Kabupaten Manokwari Selatan", "Kabupaten Pegunungan Arfak", "Kabupaten Teluk Bintuni", "Kabupaten Teluk Wondama"], "Papua Selatan": ["Kabupaten Asmat", "Kabupaten Boven Digoel", "Kabupaten Mappi", "Kabupaten Merauke"], "Papua Tengah": ["Kabupaten Deiyai", "Kabupaten Dogiyai", "Kabupaten Intan Jaya", "Kabupaten Mimika", "Kabupaten Nabire", "Kabupaten Paniai", "Kabupaten Puncak", "Kabupaten Puncak Jaya"], "Papua Pegunungan": ["Kabupaten Jayawijaya", "Kabupaten Lanny Jaya", "Kabupaten Mamberamo Tengah", "Kabupaten Nduga", "Kabupaten Pegunungan Bintang", "Kabupaten Tolikara", "Kabupaten Yalimo", "Kabupaten Yahukimo"], "Papua Barat Daya": ["Kabupaten Maybrat", "Kabupaten Raja Ampat", "Kabupaten Sorong", "Kabupaten Sorong Selatan", "Kabupaten Tambrauw", "Kota Sorong"]};
+
+var SEKTOR = {
+  kuliner: "Kuliner / makanan & minuman",
+  retail: "Retail / toko kelontong",
+  jasa: "Jasa (laundry, bengkel, salon…)",
+  manufaktur: "Produksi / manufaktur kecil",
+  fashion: "Fashion & kerajinan",
+  agribisnis: "Agribisnis / peternakan",
+  digital: "Digital / kreatif",
+  lainnya: "Lainnya"
+};
+var KEBUTUHAN_LABEL = {
+  kemasan: "Kemasan",
+  pencatatan: "Pencatatan keuangan",
+  digital: "Pemasaran digital",
+  teknologi: "Teknologi produksi/operasional",
+  legalitas: "Legalitas & SOP",
+  investasi: "Kesiapan investasi",
+  keuangan: "Keuangan",
+  konsistensi: "Konsistensi data online"
+};
+var STATUS_MINAT = {
+  baru: {label: "Menunggu jawaban pemilik", kelas: "status-baru"},
+  diterima: {label: "Diterima pemilik", kelas: "status-diterima"},
+  ditolak: {label: "Ditolak pemilik", kelas: "status-ditolak"}
+};
+
+/* ---------- contoh tampilan (JALUR TERPISAH — tidak pernah bercampur data nyata) ---------- */
+var CONTOH_LISTING = [
+  {
+    id: "contoh-1", contoh: true, sektor: "kuliner", kota: "Kota Surabaya", provinsi: "Jawa Timur",
+    level: "Usaha Mikro", skor_kesehatan: 68, skor_siap_investasi: 72, skor_konsistensi: 64,
+    valuasi_min: 280000000, valuasi_max: 420000000,
+    ringkasan: {
+      skor: {kesehatan: 68, siap_investasi: 72, kesehatan_keuangan: 70, konsistensi: 64, legalitas: 60, kemasan: 55},
+      hpp: 45, kemasan: "Label sudah lengkap, tampilan masih sederhana",
+      legalitas: "NIB dan PIRT sudah ada", kanal: ["Pesan-antar", "Media sosial"],
+      kesenjangan: ["kemasan", "digital"]
+    }
+  },
+  {
+    id: "contoh-2", contoh: true, sektor: "retail", kota: "Sidoarjo", provinsi: "Jawa Timur",
+    level: "Usaha Kecil", skor_kesehatan: 74, skor_siap_investasi: 78, skor_konsistensi: 70,
+    valuasi_min: 520000000, valuasi_max: 780000000,
+    ringkasan: {
+      skor: {kesehatan: 74, siap_investasi: 78, kesehatan_keuangan: 76, konsistensi: 70, legalitas: 80, kemasan: 72},
+      hpp: 60, kemasan: "Kemasan sudah rapi dan konsisten",
+      legalitas: "NIB, NPWP, dan izin usaha lengkap", kanal: ["Toko langsung", "Pesan-antar", "Toko online"],
+      kesenjangan: ["teknologi", "pencatatan"]
+    }
+  },
+  {
+    id: "contoh-3", contoh: true, sektor: "jasa", kota: "Kota Malang", provinsi: "Jawa Timur",
+    level: "Usaha Mikro", skor_kesehatan: 62, skor_siap_investasi: 65, skor_konsistensi: 58,
+    valuasi_min: 150000000, valuasi_max: 230000000,
+    ringkasan: {
+      skor: {kesehatan: 62, siap_investasi: 65, kesehatan_keuangan: 60, konsistensi: 58, legalitas: 45, kemasan: 50},
+      hpp: 38, kemasan: "Label belum lengkap",
+      legalitas: "NIB belum ada", kanal: ["Toko langsung", "Media sosial"],
+      kesenjangan: ["legalitas", "kemasan"]
+    }
+  }
+];
+
+/* ---------- state ---------- */
+var pengguna = null;      // {id, email}
+var profil = null;        // baris investor_profil
+var daftarNyata = [];     // baris listing_investor (aktif)
+var minatSaya = [];       // baris minat_investor milik pengguna
+var detailAktif = null;   // listing yang sedang dibuka
+var detailContoh = false;
+var cloudBelumSiap = false;
+
+/* ---------- util ---------- */
+function el(id){ return document.getElementById(id); }
+function esc(t){
+  return String(t == null ? "" : t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function fmtRp(n){
+  n = Number(n);
+  if(!isFinite(n)) return "—";
+  return "Rp" + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+function fmtSkor(n){ return (n == null || n === "") ? "—" : String(n); }
+function labelSektor(k){ return SEKTOR[k] || k || "—"; }
+function labelKebutuhan(k){ return KEBUTUHAN_LABEL[k] || k; }
+function labelLevel(l){ return l || "—"; }
+function namaWilayah(p){ return p || "—"; }
+
+var popupTerakhir = null;
+function popup(judul, isi){
+  popupTerakhir = {judul: judul, isi: isi};
+  el("popup-judul").textContent = judul;
+  el("popup-isi").textContent = isi;
+  el("popup-latar").classList.add("tampil");
+}
+function tutupPopup(){ el("popup-latar").classList.remove("tampil"); }
+el("popup-tombol").addEventListener("click", tutupPopup);
+el("popup-latar").addEventListener("click", function(e){ if(e.target === el("popup-latar")) tutupPopup(); });
+
+function tampilkanLayar(nama){
+  document.querySelectorAll(".layar").forEach(function(s){ s.classList.remove("aktif"); });
+  var t = el("layar-" + nama);
+  if(t) t.classList.add("aktif");
+  if(window.scrollTo) window.scrollTo(0, 0);
+}
+function aturBarAkun(){
+  var bar = el("bar-akun");
+  if(pengguna){
+    bar.classList.add("tampil");
+    el("bar-akun-siapa").textContent = (profil && profil.nama ? profil.nama : pengguna.email) + " · " + pengguna.email;
+  } else {
+    bar.classList.remove("tampil");
+    el("bar-akun-siapa").textContent = "";
+  }
+}
+function pesanErrorRamah(err){
+  var m = (err && err.message) ? String(err.message) : "";
+  if(/not confirmed|email not confirmed/i.test(m)) return "KONFIRMASI";
+  if(/invalid login credentials/i.test(m)) return "Email atau kata sandi tidak cocok. Periksa lagi, lalu coba masuk.";
+  if(/already registered|already exists/i.test(m)) return "Email ini sudah terdaftar. Silakan masuk, atau gunakan 'Lupa kata sandi?' bila lupa kata sandi.";
+  if(/password.*6|at least 6/i.test(m)) return "Kata sandi minimal 6 karakter. Coba lagi dengan kata sandi yang lebih panjang.";
+  if(/rate limit|too many|security purposes/i.test(m)) return "Terlalu banyak percobaan dalam waktu singkat. Tunggu sebentar, lalu coba lagi.";
+  if(/network|fetch|failed/i.test(m)) return "Tidak dapat terhubung. Periksa koneksi internet Anda, lalu coba lagi.";
+  if(/does not exist|relation .* does not exist|42P01/i.test(m)) return "BELUM_AKTIF";
+  return "Terjadi kendala. Coba lagi sebentar lagi.";
+}
+function cloudBelumAktif(){
+  var w = el("pemberitahuan-cloud");
+  w.style.display = "block";
+  w.innerHTML = '<div class="pemberitahuan"><b>Fitur ini belum aktif — pengaturan cloud belum dijalankan.</b><br>Daftar usaha nyata belum dapat dibuka karena pengaturan di cloud belum selesai. Bagian contoh tampilan di bawah tetap bisa Anda lihat.</div>';
+}
+</script>
+<script>
+"use strict";
+/* ---------- autentikasi ---------- */
+function emailValid(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || "").trim()); }
+
+async function masuk(){
+  var email = el("msk-email").value.trim();
+  var sandi = el("msk-sandi").value;
+  if(!emailValid(email)){ popup("Email belum benar", "Periksa alamat email Anda, lalu coba lagi."); return; }
+  if(!sandi){ popup("Kata sandi kosong", "Masukkan kata sandi akun investor Anda."); return; }
+  if(!sb){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); return; }
+  var hasil = await sb.auth.signInWithPassword({email: email, password: sandi});
+  if(hasil.error){
+    var ramah = pesanErrorRamah(hasil.error);
+    if(ramah === "KONFIRMASI"){
+      el("teks-konfirmasi").textContent = "Akun ini belum dikonfirmasi. Kami sudah mengirim tautan konfirmasi ke " + email + ". Buka email itu dan ketuk tautannya, lalu kembali ke sini untuk masuk.";
+      tampilkanLayar("konfirmasi");
+      return;
+    }
+    popup("Tidak dapat masuk", ramah);
+    return;
+  }
+  await setelahMasuk(hasil.data.user);
+}
+
+async function daftar(){
+  var email = el("dft-email").value.trim();
+  var sandi = el("dft-sandi").value;
+  if(!emailValid(email)){ popup("Email belum benar", "Periksa alamat email Anda, lalu coba lagi."); return; }
+  if(sandi.length < 6){ popup("Kata sandi terlalu pendek", "Kata sandi minimal 6 karakter. Coba lagi dengan kata sandi yang lebih panjang."); return; }
+  if(!sb){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); return; }
+  var hasil = await sb.auth.signUp({email: email, password: sandi, options: {emailRedirectTo: APP_URL}});
+  if(hasil.error){
+    popup("Pendaftaran belum berhasil", pesanErrorRamah(hasil.error));
+    return;
+  }
+  el("teks-konfirmasi").textContent = "Kami mengirim tautan konfirmasi ke " + email + ". Buka email itu dan ketuk tautannya, lalu kembali ke sini untuk masuk.";
+  tampilkanLayar("konfirmasi");
+}
+
+async function kirimReset(){
+  var email = el("lupa-email").value.trim();
+  if(!emailValid(email)){ popup("Email belum benar", "Periksa alamat email Anda, lalu coba lagi."); return; }
+  if(!sb){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); return; }
+  var hasil = await sb.auth.resetPasswordForEmail(email, {redirectTo: APP_URL});
+  if(hasil.error){ popup("Tautan belum terkirim", pesanErrorRamah(hasil.error)); return; }
+  popup("Tautan terkirim", "Kami mengirim tautan untuk membuat kata sandi baru ke " + email + ". Buka email itu dan ikuti tautannya.");
+  tampilkanLayar("masuk");
+}
+
+async function simpanSandiBaru(){
+  var a = el("baru-sandi").value, b = el("baru-sandi2").value;
+  if(a.length < 6){ popup("Kata sandi terlalu pendek", "Kata sandi minimal 6 karakter. Coba lagi dengan kata sandi yang lebih panjang."); return; }
+  if(a !== b){ popup("Kata sandi tidak sama", "Kata sandi baru dan ulangannya tidak sama. Ketik ulang dengan teliti."); return; }
+  if(!sb){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); return; }
+  var hasil = await sb.auth.updateUser({password: a});
+  if(hasil.error){ popup("Kata sandi belum tersimpan", pesanErrorRamah(hasil.error)); return; }
+  popup("Kata sandi baru tersimpan", "Silakan masuk dengan kata sandi baru Anda.");
+  tampilkanLayar("masuk");
+}
+
+async function keluar(){
+  if(sb){ try { await sb.auth.signOut(); } catch(e){} }
+  pengguna = null; profil = null; daftarNyata = []; minatSaya = []; detailAktif = null;
+  aturBarAkun();
+  tampilkanLayar("masuk");
+}
+
+async function setelahMasuk(user){
+  pengguna = {id: user.id, email: user.email};
+  await muatProfil();
+  aturBarAkun();
+  if(!profil){ tampilkanLayar("profil"); return; }
+  await bukaDaftar();
+}
+
+/* ---------- profil investor ---------- */
+function isiPilihanProfil(){
+  var wadah = el("pf-sektor");
+  wadah.innerHTML = "";
+  Object.keys(SEKTOR).forEach(function(k){
+    var lab = document.createElement("label");
+    var cb = document.createElement("input");
+    cb.type = "checkbox"; cb.value = k; cb.className = "pf-sektor-cb";
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(" " + SEKTOR[k]));
+    wadah.appendChild(lab);
+  });
+  var sel = el("pf-provinsi");
+  sel.innerHTML = "";
+  Object.keys(WILAYAH).forEach(function(p){
+    var op = document.createElement("option");
+    op.value = p; op.textContent = p;
+    sel.appendChild(op);
+  });
+}
+function sektorTerpilih(){
+  var out = [];
+  document.querySelectorAll(".pf-sektor-cb:checked").forEach(function(cb){ out.push(cb.value); });
+  return out;
+}
+function provinsiTerpilih(){
+  var out = [];
+  var sel = el("pf-provinsi");
+  for(var i = 0; i < sel.options.length; i++){ if(sel.options[i].selected) out.push(sel.options[i].value); }
+  return out;
+}
+
+async function muatProfil(){
+  profil = null;
+  if(!sb || !pengguna) return;
+  try {
+    var hasil = await sb.from("investor_profil").select("*").eq("id", pengguna.id).single();
+    if(hasil && hasil.data) profil = hasil.data;
+  } catch(e){ profil = null; }
+}
+
+async function simpanProfil(){
+  var nama = el("pf-nama").value.trim();
+  if(!nama){ popup("Nama belum diisi", "Isi nama lengkap Anda agar pemilik usaha tahu siapa Anda."); return; }
+  var lembaga = el("pf-lembaga").value.trim();
+  var fs = sektorTerpilih(), fp = provinsiTerpilih();
+  if(!sb || !pengguna){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); return; }
+  var hasil = await sb.from("investor_profil").upsert({
+    id: pengguna.id, nama: nama, lembaga: lembaga || null, fokus_sektor: fs, fokus_provinsi: fp
+  });
+  if(hasil.error){
+    var ramah = pesanErrorRamah(hasil.error);
+    if(ramah === "BELUM_AKTIF"){ popup("Fitur ini belum aktif", "Fitur ini belum aktif — pengaturan cloud belum dijalankan. Coba lagi nanti."); return; }
+    popup("Profil belum tersimpan", ramah);
+    return;
+  }
+  profil = {id: pengguna.id, nama: nama, lembaga: lembaga, fokus_sektor: fs, fokus_provinsi: fp};
+  aturBarAkun();
+  await bukaDaftar();
+}
+</script>
+<script>
+"use strict";
+/* ---------- daftar usaha ---------- */
+function isiFilter(){
+  var fs = el("flt-sektor");
+  fs.innerHTML = "";
+  var o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Semua sektor"; fs.appendChild(o0);
+  Object.keys(SEKTOR).forEach(function(k){
+    var op = document.createElement("option"); op.value = k; op.textContent = SEKTOR[k]; fs.appendChild(op);
+  });
+  var fp = el("flt-provinsi");
+  fp.innerHTML = "";
+  var p0 = document.createElement("option"); p0.value = ""; p0.textContent = "Semua provinsi"; fp.appendChild(p0);
+  Object.keys(WILAYAH).forEach(function(p){
+    var op = document.createElement("option"); op.value = p; op.textContent = p; fp.appendChild(op);
+  });
+  isiKotaFilter("");
+}
+function isiKotaFilter(prov){
+  var sel = el("flt-kota");
+  sel.innerHTML = "";
+  if(!prov){
+    var o = document.createElement("option"); o.value = ""; o.textContent = "Pilih provinsi dulu"; sel.appendChild(o);
+    sel.disabled = true; sel.value = "";
+    return;
+  }
+  sel.disabled = false;
+  var o2 = document.createElement("option"); o2.value = ""; o2.textContent = "Semua kota di provinsi ini"; sel.appendChild(o2);
+  (WILAYAH[prov] || []).forEach(function(k){
+    var op = document.createElement("option"); op.value = k; op.textContent = k; sel.appendChild(op);
+  });
+}
+
+async function bukaDaftar(){
+  tampilkanLayar("daftar");
+  await muatDaftar();
+  await muatMinatSaya();
+}
+
+async function muatDaftar(){
+  daftarNyata = [];
+  cloudBelumSiap = false;
+  el("pemberitahuan-cloud").style.display = "none";
+  el("pemberitahuan-cloud").innerHTML = "";
+  el("wadah-kosong").style.display = "none";
+  el("wadah-daftar").innerHTML = "";
+  if(!sb){ cloudBelumSiap = true; cloudBelumAktif(); tampilkanContoh(true); return; }
+  var hasil;
+  try {
+    hasil = await sb.from("listing_investor").select("*").eq("aktif", true).order("skor_siap_investasi", {ascending: false});
+  } catch(e){ hasil = {data: null, error: e}; }
+  if(hasil && hasil.error){
+    cloudBelumSiap = true;
+    cloudBelumAktif();
+    tampilkanContoh(true);
+    return;
+  }
+  daftarNyata = (hasil && hasil.data) ? hasil.data : [];
+  terapkanFilter();
+}
+
+function bacaFilter(){
+  return {
+    sektor: el("flt-sektor").value,
+    provinsi: el("flt-provinsi").value,
+    kota: el("flt-kota").value,
+    skorMin: parseInt(el("flt-skor").value || "0", 10),
+    urut: el("flt-urut").value
+  };
+}
+function saringDanUrutkan(semua, f){
+  var out = semua.filter(function(l){
+    if(f.sektor && l.sektor !== f.sektor) return false;
+    if(f.provinsi && l.provinsi !== f.provinsi) return false;
+    if(f.kota && l.kota !== f.kota) return false;
+    if(f.skorMin && (Number(l.skor_siap_investasi) || 0) < f.skorMin) return false;
+    return true;
+  });
+  out.sort(function(a, b){
+    if(f.urut === "valuasi") return (Number(b.valuasi_max) || 0) - (Number(a.valuasi_max) || 0);
+    return (Number(b.skor_siap_investasi) || 0) - (Number(a.skor_siap_investasi) || 0);
+  });
+  return out;
+}
+function terapkanFilter(){
+  var f = bacaFilter();
+  var hasil = saringDanUrutkan(daftarNyata, f);
+  var wadah = el("wadah-daftar");
+  wadah.innerHTML = "";
+  if(daftarNyata.length === 0){
+    el("wadah-kosong").style.display = "block";
+    tampilkanContoh(true);
+    el("wadah-lihat-contoh").style.display = "none";
+    return;
+  }
+  el("wadah-kosong").style.display = "none";
+  if(hasil.length === 0){
+    wadah.innerHTML = '<div class="card tengah"><p class="muted">Tidak ada usaha yang cocok dengan filter Anda. Longgarkan filter, lalu coba lagi.</p></div>';
+  } else {
+    hasil.forEach(function(l){
+      wadah.appendChild(kartuListing(l, false));
+    });
+  }
+  tampilkanContoh(false);
+  el("wadah-lihat-contoh").style.display = "block";
+}
+function tampilkanContoh(tampil){
+  el("wadah-contoh").style.display = tampil ? "block" : "none";
+  if(tampil && !el("daftar-contoh").hasChildNodes()){
+    CONTOH_LISTING.forEach(function(l){ el("daftar-contoh").appendChild(kartuListing(l, true)); });
+  }
+}
+
+function kesenjanganDari(ringkasan){
+  if(!ringkasan) return [];
+  var k = ringkasan.kesenjangan || ringkasan.kesenjangan_utama || ringkasan.kebutuhan || [];
+  if(typeof k === "string") return [k];
+  if(Array.isArray(k)) return k;
+  return [];
+}
+function kartuListing(l, isContoh){
+  var d = document.createElement("div");
+  d.className = "kartu" + (isContoh ? " contoh" : "");
+  var kes = kesenjanganDari(l.ringkasan);
+  var html = "";
+  if(isContoh) html += '<span class="lencana">Data contoh</span> ';
+  html += '<div class="judul-kartu">' + esc(labelSektor(l.sektor)) + '</div>';
+  html += '<div class="meta">' + esc(l.kota || "—") + ', ' + esc(namaWilayah(l.provinsi)) + ' · ' + esc(labelLevel(l.level)) + '</div>';
+  html += '<div class="skor">';
+  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(l.skor_kesehatan)) + '</div><div class="nama">Kesehatan usaha</div></div>';
+  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(l.skor_siap_investasi)) + '</div><div class="nama">Siap Investasi</div></div>';
+  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(l.skor_konsistensi)) + '</div><div class="nama">Konsistensi</div></div>';
+  html += '</div>';
+  html += '<div class="valuasi">Rentang valuasi: <span>' + esc(fmtRp(l.valuasi_min)) + ' – ' + esc(fmtRp(l.valuasi_max)) + '</span></div>';
+  if(kes.length){
+    html += '<div class="kesenjangan">Kesenjangan utama: ';
+    kes.forEach(function(k){ html += '<span class="tag">' + esc(labelKebutuhan(k)) + '</span>'; });
+    html += '</div>';
+  }
+  d.innerHTML = html;
+  d.addEventListener("click", function(){ bukaDetail(l, isContoh); });
+  return d;
+}
+
+/* ---------- detail + nyatakan minat ---------- */
+function bukaDetail(l, isContoh){
+  detailAktif = l;
+  detailContoh = !!isContoh;
+  var r = l.ringkasan || {};
+  var skor = r.skor || {};
+  el("dt-judul").textContent = labelSektor(l.sektor) + " — " + (l.kota || "—") + ", " + namaWilayah(l.provinsi);
+  var html = "";
+  if(isContoh) html += '<p><span class="lencana">Data contoh</span></p>';
+  html += '<dl class="rincian">';
+  html += '<dt>Level usaha</dt><dd>' + esc(labelLevel(l.level)) + '</dd>';
+  html += '<dt>Skor kesehatan usaha</dt><dd>' + esc(fmtSkor(l.skor_kesehatan)) + ' / 100</dd>';
+  html += '<dt>Skor Siap Investasi</dt><dd>' + esc(fmtSkor(l.skor_siap_investasi)) + ' / 100</dd>';
+  html += '<dt>Skor konsistensi</dt><dd>' + esc(fmtSkor(l.skor_konsistensi)) + ' / 100</dd>';
+  if(skor.kesehatan_keuangan != null) html += '<dt>Kesehatan keuangan</dt><dd>' + esc(fmtSkor(skor.kesehatan_keuangan)) + ' / 100</dd>';
+  if(skor.legalitas != null) html += '<dt>Legalitas</dt><dd>' + esc(fmtSkor(skor.legalitas)) + ' / 100</dd>';
+  if(skor.kemasan != null) html += '<dt>Kemasan</dt><dd>' + esc(fmtSkor(skor.kemasan)) + ' / 100</dd>';
+  html += '<dt>Rentang valuasi</dt><dd>' + esc(fmtRp(l.valuasi_min)) + ' – ' + esc(fmtRp(l.valuasi_max)) + '</dd>';
+  if(r.hpp != null || r.hpp_persen != null) html += '<dt>Harga pokok (HPP)</dt><dd>' + esc(String(r.hpp != null ? r.hpp : r.hpp_persen)) + '% dari omzet</dd>';
+  if(r.kemasan) html += '<dt>Kemasan</dt><dd>' + esc(typeof r.kemasan === "object" ? JSON.stringify(r.kemasan) : r.kemasan) + '</dd>';
+  if(r.legalitas) html += '<dt>Legalitas</dt><dd>' + esc(typeof r.legalitas === "object" ? JSON.stringify(r.legalitas) : r.legalitas) + '</dd>';
+  if(r.kanal){
+    var kanal = Array.isArray(r.kanal) ? r.kanal : [r.kanal];
+    html += '<dt>Kanal penjualan</dt><dd>' + esc(kanal.join(", ")) + '</dd>';
+  }
+  var kes = kesenjanganDari(r);
+  if(kes.length){
+    html += '<dt>Kesenjangan utama</dt><dd>';
+    kes.forEach(function(k){ html += '<span class="tag">' + esc(labelKebutuhan(k)) + '</span> '; });
+    html += '</dd>';
+  }
+  html += '</dl>';
+  html += '<p class="kecil">Ringkasan ini dibagikan atas izin pemilik usaha. Nama pemilik, alamat rinci, kontak, dan laporan transaksi tidak ditampilkan.</p>';
+  el("dt-badan").innerHTML = html;
+  perbaruiStatusMinat();
+  tampilkanLayar("detail");
+}
+function minatUntukListing(listingId){
+  if(!listingId) return null;
+  for(var i = 0; i < minatSaya.length; i++){ if(minatSaya[i].listing_id === listingId) return minatSaya[i]; }
+  return null;
+}
+function perbaruiStatusMinat(){
+  var form = el("minat-form"), status = el("minat-status");
+  if(detailContoh){
+    form.style.display = "block";
+    status.style.display = "none";
+    return;
+  }
+  var sudah = detailAktif ? minatUntukListing(detailAktif.id) : null;
+  if(sudah){
+    form.style.display = "none";
+    status.style.display = "block";
+    var st = STATUS_MINAT[sudah.status] || STATUS_MINAT.baru;
+    status.innerHTML = '<p><span class="status-pill ' + st.kelas + '">' + esc(st.label) + '</span></p><p class="muted">Anda sudah menyatakan minat pada usaha ini' + (sudah.dana_diminati ? ' dengan dana ' + esc(fmtRp(sudah.dana_diminati)) : '') + '. Jawaban pemilik akan tampil di layar "Minat saya".</p>';
+  } else {
+    form.style.display = "block";
+    status.style.display = "none";
+  }
+}
+async function kirimMinat(){
+  if(!detailAktif) return;
+  if(detailContoh){
+    popup("Ini data contoh", "Ini data contoh — minat hanya bisa dinyatakan pada usaha nyata. Bila sudah ada usaha nyata di daftar, Anda dapat menyatakan minat di sana.");
+    return;
+  }
+  if(!pengguna){ popup("Masuk dulu", "Masuk sebagai investor untuk menyatakan minat pada usaha ini."); tampilkanLayar("masuk"); return; }
+  if(!sb){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); return; }
+  var pesan = el("minat-pesan").value.trim();
+  var danaTxt = el("minat-dana").value.trim();
+  var dana = danaTxt === "" ? null : Number(danaTxt);
+  if(danaTxt !== "" && (!isFinite(dana) || dana < 0)){ popup("Dana belum benar", "Isi dana investasi dengan angka yang benar, atau kosongkan bila belum ada angka."); return; }
+  var baris = {
+    listing_id: detailAktif.id,
+    investor_id: pengguna.id,
+    investor_nama: (profil && profil.nama) ? profil.nama : pengguna.email,
+    pesan: pesan || null,
+    dana_diminati: dana
+  };
+  var hasil = await sb.from("minat_investor").insert([baris]);
+  if(hasil.error){
+    var ramah = pesanErrorRamah(hasil.error);
+    if(ramah === "BELUM_AKTIF"){ popup("Fitur ini belum aktif", "Fitur ini belum aktif — pengaturan cloud belum dijalankan. Coba lagi nanti."); return; }
+    popup("Minat belum terkirim", ramah);
+    return;
+  }
+  minatSaya.push({listing_id: baris.listing_id, investor_id: baris.investor_id, investor_nama: baris.investor_nama, pesan: baris.pesan, dana_diminati: baris.dana_diminati, status: "baru", dibuat_pada: new Date().toISOString()});
+  el("minat-pesan").value = "";
+  el("minat-dana").value = "";
+  perbaruiStatusMinat();
+  popup("Minat terkirim", "Minat Anda sudah diteruskan ke pemilik usaha. Statusnya: Menunggu jawaban pemilik.");
+}
+
+/* ---------- minat saya ---------- */
+async function muatMinatSaya(){
+  minatSaya = [];
+  if(!sb || !pengguna) return;
+  try {
+    var hasil = await sb.from("minat_investor").select("*").eq("investor_id", pengguna.id).order("dibuat_pada", {ascending: false});
+    if(hasil && !hasil.error && hasil.data) minatSaya = hasil.data;
+  } catch(e){ minatSaya = []; }
+}
+function cariListing(id){
+  for(var i = 0; i < daftarNyata.length; i++){ if(daftarNyata[i].id === id) return daftarNyata[i]; }
+  return null;
+}
+function renderMinatSaya(){
+  var wadah = el("wadah-minat");
+  wadah.innerHTML = "";
+  if(minatSaya.length === 0){
+    wadah.innerHTML = '<div class="card tengah"><p class="muted">Anda belum menyatakan minat pada usaha apa pun.</p></div>';
+    return;
+  }
+  minatSaya.forEach(function(m){
+    var l = cariListing(m.listing_id);
+    var d = document.createElement("div");
+    d.className = "card";
+    var st = STATUS_MINAT[m.status] || STATUS_MINAT.baru;
+    var html = '<div class="judul-kartu">' + esc(l ? labelSektor(l.sektor) : "Usaha") + '</div>';
+    html += '<div class="meta">' + esc(l ? (l.kota + ", " + namaWilayah(l.provinsi) + " · " + labelLevel(l.level)) : "Usaha ini tidak lagi ditampilkan") + '</div>';
+    html += '<p style="margin-top:12px"><span class="status-pill ' + st.kelas + '">' + esc(st.label) + '</span></p>';
+    if(m.dana_diminati) html += '<p class="muted">Dana yang diminati: ' + esc(fmtRp(m.dana_diminati)) + '</p>';
+    if(m.pesan) html += '<p class="muted">Pesan Anda: ' + esc(m.pesan) + '</p>';
+    if(m.dibuat_pada) html += '<p class="kecil">Dinyatakan pada ' + esc(String(m.dibuat_pada).slice(0, 10)) + '</p>';
+    d.innerHTML = html;
+    wadah.appendChild(d);
+  });
+}
+function bukaMinatSaya(){
+  renderMinatSaya();
+  tampilkanLayar("minat");
+}
+</script>
+<script>
+"use strict";
+/* ---------- tautan berbagi ?bagikan=TOKEN ---------- */
+function bacaTokenBagikan(){
+  try {
+    var q = new URLSearchParams(window.location.search || "");
+    return q.get("bagikan") || "";
+  } catch(e){ return ""; }
+}
+async function muatBagikan(token){
+  if(!sb){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); tampilkanLayar("masuk"); return false; }
+  var hasil;
+  try {
+    hasil = await sb.rpc("portal_snapshot", {p_token: token});
+  } catch(e){ hasil = {data: null, error: e}; }
+  var snap = null;
+  if(hasil && !hasil.error && hasil.data){
+    var rows = Array.isArray(hasil.data) ? hasil.data : [hasil.data];
+    if(rows.length && rows[0] && rows[0].data) snap = rows[0].data;
+    else if(rows.length && rows[0] && rows[0].nama_usaha) snap = rows[0];
+  }
+  if(!snap){
+    popup("Tautan tidak dapat dibuka", "Tautan berbagi ini tidak ditemukan atau sudah tidak berlaku. Minta tautan baru kepada pemilik usaha.");
+    tampilkanLayar("masuk");
+    return false;
+  }
+  tampilkanSnapshot(snap);
+  tampilkanLayar("bagikan");
+  return true;
+}
+function tampilkanSnapshot(s){
+  var skor = s.skor || {};
+  var v = s.valuasi || {};
+  var sak = s.sak_emkm || {};
+  var html = '<dl class="rincian">';
+  html += '<dt>Nama usaha</dt><dd>' + esc(s.nama_usaha || "—") + '</dd>';
+  html += '<dt>Sektor</dt><dd>' + esc(s.sektor || "—") + '</dd>';
+  html += '<dt>Wilayah</dt><dd>' + esc((s.kota || "—") + ", " + namaWilayah(s.provinsi)) + '</dd>';
+  html += '<dt>Level usaha</dt><dd>' + esc(labelLevel(s.level)) + '</dd>';
+  if(s.level_kematangan != null){
+    var mat = ["Bertahan", "Tercatat", "Terukur", "Tumbuh", "Siap Ekspansi"];
+    html += '<dt>Level kematangan</dt><dd>' + esc(mat[s.level_kematangan] || String(s.level_kematangan)) + '</dd>';
+  }
+  html += '</dl>';
+  html += '<div class="skor">';
+  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.kesehatan)) + '</div><div class="nama">Kesehatan usaha</div></div>';
+  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.siap_investasi)) + '</div><div class="nama">Siap Investasi</div></div>';
+  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.konsistensi)) + '</div><div class="nama">Konsistensi</div></div>';
+  if(skor.kesehatan_keuangan != null) html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.kesehatan_keuangan)) + '</div><div class="nama">Kesehatan keuangan</div></div>';
+  if(skor.legalitas != null) html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.legalitas)) + '</div><div class="nama">Legalitas</div></div>';
+  if(skor.kemasan != null) html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.kemasan)) + '</div><div class="nama">Kemasan</div></div>';
+  html += '</div>';
+  html += '<div class="valuasi">Rentang valuasi: <span>' + esc(fmtRp(v.rendah)) + ' – ' + esc(fmtRp(v.tinggi)) + '</span></div>';
+  if(v.tengah != null) html += '<p class="muted">Nilai tengah: ' + esc(fmtRp(v.tengah)) + '</p>';
+  html += '<dl class="rincian">';
+  if(sak.pendapatan_per_bulan != null) html += '<dt>Pendapatan per bulan</dt><dd>' + esc(fmtRp(sak.pendapatan_per_bulan)) + '</dd>';
+  if(sak.laba_bersih_per_bulan != null) html += '<dt>Laba bersih per bulan</dt><dd>' + esc(fmtRp(sak.laba_bersih_per_bulan)) + '</dd>';
+  if(sak.aset_bersih != null) html += '<dt>Aset bersih</dt><dd>' + esc(fmtRp(sak.aset_bersih)) + '</dd>';
+  if(s.dibuat_pada) html += '<dt>Ringkasan dibuat</dt><dd>' + esc(String(s.dibuat_pada).slice(0, 10)) + '</dd>';
+  html += '</dl>';
+  if(Array.isArray(s.jejak_audit) && s.jejak_audit.length){
+    html += '<h3 style="margin-top:16px">Jejak penilaian</h3><ul class="jejak">';
+    s.jejak_audit.forEach(function(j){
+      html += '<li>' + esc(typeof j === "object" ? (j.teks || j.keterangan || JSON.stringify(j)) : j) + '</li>';
+    });
+    html += '</ul>';
+  }
+  html += '<p class="kecil" style="margin-top:14px">Snapshot ini dibagikan atas izin pemilik usaha dan hanya untuk dibaca. Kontak pemilik dan laporan transaksi tidak ditampilkan.</p>';
+  el("bg-badan").innerHTML = html;
+}
+
+/* ---------- wiring + init ---------- */
+function pasangEvent(){
+  el("btn-masuk").addEventListener("click", masuk);
+  el("btn-ke-daftar").addEventListener("click", function(){
+    el("kartu-daftar").style.display = "block";
+    el("dft-email").value = el("msk-email").value;
+  });
+  el("btn-batal-daftar").addEventListener("click", function(){ el("kartu-daftar").style.display = "none"; });
+  el("btn-daftar").addEventListener("click", daftar);
+  el("btn-ke-lupa").addEventListener("click", function(){ tampilkanLayar("lupa"); });
+  el("btn-konfirmasi-ke-masuk").addEventListener("click", function(){ tampilkanLayar("masuk"); });
+  el("btn-kirim-reset").addEventListener("click", kirimReset);
+  el("btn-lupa-ke-masuk").addEventListener("click", function(){ tampilkanLayar("masuk"); });
+  el("btn-simpan-sandi").addEventListener("click", simpanSandiBaru);
+  el("btn-simpan-profil").addEventListener("click", simpanProfil);
+  el("btn-keluar").addEventListener("click", keluar);
+  el("btn-nav-daftar").addEventListener("click", bukaDaftar);
+  el("btn-nav-minat").addEventListener("click", bukaMinatSaya);
+  el("btn-minat-ke-daftar").addEventListener("click", bukaDaftar);
+  el("btn-detail-kembali").addEventListener("click", bukaDaftar);
+  el("btn-kirim-minat").addEventListener("click", kirimMinat);
+  el("btn-bagikan-ke-masuk").addEventListener("click", function(){ tampilkanLayar("masuk"); });
+  el("btn-lihat-contoh").addEventListener("click", function(){
+    tampilkanContoh(true);
+    el("wadah-lihat-contoh").style.display = "none";
+  });
+  ["flt-sektor", "flt-skor", "flt-urut"].forEach(function(id){
+    el(id).addEventListener("change", terapkanFilter);
+  });
+  el("flt-provinsi").addEventListener("change", function(){
+    isiKotaFilter(el("flt-provinsi").value);
+    terapkanFilter();
+  });
+  el("flt-kota").addEventListener("change", terapkanFilter);
+}
+
+async function init(){
+  isiPilihanProfil();
+  isiFilter();
+  pasangEvent();
+  var token = bacaTokenBagikan();
+  if(token){
+    await muatBagikan(token);
+    return;
+  }
+  var hash = window.location.hash || "";
+  if(hash.indexOf("type=recovery") !== -1){
+    tampilkanLayar("sandi-baru");
+    return;
+  }
+  if(!sb){ tampilkanLayar("masuk"); return; }
+  try {
+    var sesi = await sb.auth.getSession();
+    var user = sesi && sesi.data && sesi.data.session ? sesi.data.session.user : null;
+    if(!user){ tampilkanLayar("masuk"); return; }
+    await setelahMasuk(user);
+  } catch(e){
+    tampilkanLayar("masuk");
+  }
+}
+
+/* API kecil untuk pengujian otomatis (tidak dipakai pengguna) */
+window.__INVESTOR__ = {
+  get state(){ return {pengguna: pengguna, profil: profil, daftarNyata: daftarNyata, minatSaya: minatSaya, cloudBelumSiap: cloudBelumSiap, detailAktif: detailAktif, detailContoh: detailContoh, popupTerakhir: popupTerakhir}; },
+  saringDanUrutkan: saringDanUrutkan,
+  bukaDetail: bukaDetail,
+  kirimMinat: kirimMinat,
+  muatBagikan: muatBagikan,
+  muatDaftar: muatDaftar,
+  muatProfil: muatProfil,
+  simpanProfil: simpanProfil,
+  masuk: masuk,
+  daftar: daftar,
+  kirimReset: kirimReset,
+  bukaMinatSaya: bukaMinatSaya,
+  fmtRp: fmtRp,
+  CONTOH_LISTING: CONTOH_LISTING,
+  setPengguna: function(u, p){ pengguna = u; profil = p || null; aturBarAkun(); },
+  setDaftar: function(rows){ daftarNyata = rows; terapkanFilter(); }
+};
+
+init();
+</script>
+</body>
+</html>
