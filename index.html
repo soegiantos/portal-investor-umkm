@@ -176,6 +176,9 @@ button{cursor:pointer;font-family:inherit}
     <label for="pf-provinsi">Fokus provinsi (boleh lebih dari satu)</label>
     <select id="pf-provinsi" multiple></select>
     <p class="kecil">Pilih dengan menahan tombol Ctrl (Windows) atau Cmd (Mac) saat mengeklik.</p>
+    <label for="pf-kode">Kode marketing (jika ada)</label>
+    <input id="pf-kode" type="text" placeholder="contoh: UMKM30" maxlength="6" autocomplete="off" style="text-transform:uppercase">
+    <p class="kecil">Opsional — isi hanya bila Anda mendapat kode dari tim marketing.</p>
     <button class="btn" id="btn-simpan-profil" type="button">Simpan profil</button>
   </div>
 </section>
@@ -550,7 +553,24 @@ async function muatProfil(){
   try {
     var hasil = await sb.from("investor_profil").select("*").eq("id", pengguna.id).single();
     if(hasil && hasil.data) profil = hasil.data;
+    if(profil && profil.kode_marketing){ var k = el("pf-kode"); if(k) k.value = profil.kode_marketing; }
   } catch(e){ profil = null; }
+}
+
+/* ---------- Kode marketing (opsional) — pola yang sama seperti aplikasi utama ----------
+   Format: tepat 6 huruf/angka. Dicek lewat fungsi cek_kode_marketing di cloud.
+   Kode tidak dikenal / tidak aktif memblokir simpanan — pengguna bisa
+   memperbaiki kodenya atau mengosongkan kolomnya lalu simpan lagi. Bila
+   tabel/fungsi belum dibuat, kode diterima apa adanya (fail-open). */
+function kodeMarketingBersih(s){
+  return String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+}
+async function cekKodeMarketing(kode){
+  try{
+    var r = await sb.rpc("cek_kode_marketing", {p_kode: kode});
+    if(r.error) return {ada: true, takPasti: true};
+    return {ada: !!r.data, takPasti: false};
+  }catch(e){ return {ada: true, takPasti: true}; }
 }
 
 async function simpanProfil(){
@@ -559,8 +579,19 @@ async function simpanProfil(){
   var lembaga = el("pf-lembaga").value.trim();
   var fs = sektorTerpilih(), fp = provinsiTerpilih();
   if(!sb || !pengguna){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); return; }
+  /* Kode marketing (opsional): format tepat 6 huruf/angka, lalu dicek ke
+     tabel marketing_kode. Kode tidak dikenal / tidak aktif memblokir
+     simpanan — pengguna bisa memperbaiki kodenya atau mengosongkan
+     kolomnya lalu simpan lagi. Bila tabel/fungsi belum dibuat, kode
+     diterima apa adanya. */
+  var kodeMk = kodeMarketingBersih(el("pf-kode").value);
+  if(kodeMk){
+    if(!/^[A-Z0-9]{6}$/.test(kodeMk)){ popup("Kode marketingnya belum benar", "Kode marketing terdiri dari 6 huruf atau angka, contoh: UMKM30. Periksa lagi kodenya, atau kosongkan kolomnya bila Anda tidak punya kode — profil tetap bisa disimpan."); return; }
+    var cekK = await cekKodeMarketing(kodeMk);
+    if(!cekK.ada && !cekK.takPasti){ popup("Kode marketing tidak ditemukan", "Kode marketing tidak ditemukan atau sudah tidak aktif — periksa lagi kodenya, atau lanjutkan tanpa kode (kosongkan kolomnya). Profil tetap bisa disimpan."); return; }
+  }
   var hasil = await sb.from("investor_profil").upsert({
-    id: pengguna.id, nama: nama, lembaga: lembaga || null, fokus_sektor: fs, fokus_provinsi: fp
+    id: pengguna.id, nama: nama, lembaga: lembaga || null, fokus_sektor: fs, fokus_provinsi: fp, kode_marketing: kodeMk || null
   });
   if(hasil.error){
     var ramah = pesanErrorRamah(hasil.error);
@@ -568,7 +599,7 @@ async function simpanProfil(){
     popup("Profil belum tersimpan", ramah);
     return;
   }
-  profil = {id: pengguna.id, nama: nama, lembaga: lembaga, fokus_sektor: fs, fokus_provinsi: fp};
+  profil = {id: pengguna.id, nama: nama, lembaga: lembaga, fokus_sektor: fs, fokus_provinsi: fp, kode_marketing: kodeMk || null};
   aturBarAkun();
   await bukaDaftar();
 }
@@ -992,6 +1023,8 @@ window.__INVESTOR__ = {
   muatDaftar: muatDaftar,
   muatProfil: muatProfil,
   simpanProfil: simpanProfil,
+  kodeMarketingBersih: kodeMarketingBersih,
+  cekKodeMarketing: cekKodeMarketing,
   masuk: masuk,
   daftar: daftar,
   kirimReset: kirimReset,
