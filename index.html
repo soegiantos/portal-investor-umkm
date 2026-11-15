@@ -1217,7 +1217,7 @@ init();
   /* Tombol bernama yang termasuk kelompok navigasi/penjelajahan
      (bukan aksi sekali pakai). ID di luar daftar ini tidak pernah
      ditandai emas. */
-  var ID_NAVIGASI=["btn-nav-daftar","btn-nav-minat","btn-detail-kembali","btn-minat-ke-daftar","btn-bagikan-ke-masuk","btn-ke-daftar","btn-batal-daftar","btn-ke-lupa","btn-lupa-ke-masuk","btn-konfirmasi-ke-masuk"];
+  var ID_NAVIGASI=["btn-nav-daftar","btn-nav-minat","btn-detail-kembali","btn-minat-ke-daftar","btn-bagikan-ke-masuk"];
   function bacaSet(){ try{ var s=localStorage.getItem(KUNCI_TOMBOL); if(!s) return {}; var o=JSON.parse(s); return (o&&typeof o==="object")?o:{}; }catch(e){ return {}; } }
   function simpanSet(o){ try{ localStorage.setItem(KUNCI_TOMBOL, JSON.stringify(o)); }catch(e){} }
   function bolehDitandai(el){
