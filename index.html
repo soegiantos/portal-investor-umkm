@@ -6,7 +6,7 @@
 <title>Portal Investor — Aplikasi Introspeksi UMKM</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous"></script>
 <style>
-:root{--gold:#e3b959;--gold-dim:#b98f3e;--bg:#0f1115;--card:#1b1e26;--card2:#232733;--text:#e8e6e1;--muted:#a9a49a;--line:#2e3340;--ok:#7fc98f;}
+:root{--gold:#e3b959;--gold-dim:#b98f3e;--bg:#0f1115;--card:#1b1e26;--card2:#232733;--text:#e8e6e1;--muted:#a9a49a;--line:#2e3340;--ok:#7fc98f;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55}
 .wrap{max-width:860px;margin:0 auto;padding:16px 16px 64px}
@@ -28,10 +28,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--gold-dim);border
 textarea{min-height:84px;resize:vertical}
 select[multiple]{min-height:130px}
 button{cursor:pointer;font-family:inherit}
-.btn{display:inline-block;background:var(--gold);color:#171207;border:0;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:700;margin-top:14px}
-.btn:hover{filter:brightness(1.08)}
-.btn-ghost{background:transparent;color:var(--gold);border:1px solid var(--gold-dim);border-radius:10px;padding:10px 16px;font-size:14px;margin-top:14px}
+.btn{display:inline-block;background:var(--gold);color:#171207;border:0;border-radius:999px;padding:12px 20px;font-size:15px;font-weight:700;margin-top:14px;min-height:48px;box-shadow:var(--shadow);transition:background .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease,filter .18s ease}
+.btn:hover{filter:brightness(1.07);transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.4),0 14px 28px -12px rgba(0,0,0,.65)}
+.btn-ghost{background:transparent;color:var(--gold);border:1px solid var(--gold-dim);border-radius:999px;padding:10px 16px;font-size:14px;margin-top:14px;min-height:48px;box-shadow:var(--shadow);transition:background .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease,filter .18s ease}
+.btn-ghost:hover{filter:brightness(1.07);transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.4),0 14px 28px -12px rgba(0,0,0,.65)}
 .btn-kecil{padding:8px 12px;font-size:13.5px;margin-top:8px}
+/* Umpan-balik tekan sesaat: semua tombol mengecil + sedikit lebih gelap */
+.btn:active,.btn-ghost:active,.tombol-link:active{transform:scale(.98);filter:brightness(.94)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* Tombol yang sudah diketuk: EMAS, menetap (lihat modul TOMBOL MODERN di skrip) */
+.btn.sudah-diklik:not([aria-pressed="true"]){background:var(--gold);border-color:var(--gold);color:#171207}
+.btn-ghost.sudah-diklik{background:var(--gold);border-color:var(--gold);color:#171207}
+/* Tombol sebaris sama ukurannya */
+.bar-akun .tombol .btn,.bar-akun .tombol .btn-ghost{flex:none;min-width:84px;white-space:nowrap}
+.card .btn,.card .btn-ghost{min-width:84px;white-space:nowrap}
 .tombol-link{background:none;border:0;color:var(--gold);text-decoration:underline;font-size:14px;padding:6px 0;cursor:pointer}
 .bar-akun{display:none;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:10px 0}
 .bar-akun.tampil{display:flex}
@@ -40,6 +50,7 @@ button{cursor:pointer;font-family:inherit}
 .bar-akun .btn-ghost{margin-top:0}
 .filter{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
 @media(max-width:560px){.filter{grid-template-columns:1fr}}
+@media(max-width:820px){.btn,.btn-ghost{min-height:52px}}
 .pemberitahuan{background:#26200f;border:1px solid var(--gold-dim);color:#f0d48a;border-radius:12px;padding:14px 16px;margin:14px 0;font-size:14.5px}
 .spanduk-contoh{background:#26200f;border:1px dashed var(--gold);color:#f0d48a;border-radius:12px;padding:12px 16px;margin:14px 0;font-size:14.5px;text-align:center}
 .lencana{display:inline-block;background:#26200f;color:var(--gold);border:1px solid var(--gold-dim);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
@@ -1190,6 +1201,73 @@ window.__INVESTOR__ = {
 };
 
 init();
+</script>
+<script>
+"use strict";
+/* ---------- TOMBOL MODERN: tombol yang sudah diketuk jadi EMAS, menetap ----------
+   SATU pendengar klik terdelegasi (capture): tombol navigasi/penjelajahan
+   yang diketuk mendapat kelas .sudah-diklik dan warnanya berubah jadi emas
+   — tetap emas sampai kapan pun, supaya terlihat mana yang sudah pernah
+   ditekan. Aksi sekali pakai (Masuk/Daftar/Simpan/Kirim/Keluar/Mengerti/
+   Salin/...) TIDAK pernah mendapat kelas ini — mereka hanya mendapat
+   umpan-balik tekan sesaat di CSS. Kunci simpanan TIDAK PERNAH memakai
+   teks tombol; hanya id tombol navigasi. */
+(function(){
+  var KUNCI_TOMBOL="investor-tombol-diklik:v1";
+  /* Tombol bernama yang termasuk kelompok navigasi/penjelajahan
+     (bukan aksi sekali pakai). ID di luar daftar ini tidak pernah
+     ditandai emas. */
+  var ID_NAVIGASI=["btn-nav-daftar","btn-nav-minat","btn-detail-kembali","btn-minat-ke-daftar","btn-bagikan-ke-masuk","btn-ke-daftar","btn-batal-daftar","btn-ke-lupa","btn-lupa-ke-masuk","btn-konfirmasi-ke-masuk"];
+  function bacaSet(){ try{ var s=localStorage.getItem(KUNCI_TOMBOL); if(!s) return {}; var o=JSON.parse(s); return (o&&typeof o==="object")?o:{}; }catch(e){ return {}; } }
+  function simpanSet(o){ try{ localStorage.setItem(KUNCI_TOMBOL, JSON.stringify(o)); }catch(e){} }
+  function bolehDitandai(el){
+    if(!el||el.nodeType!==1) return false;
+    /* Keadaan semantiknya sendiri sudah menetap. */
+    if(el.hasAttribute("aria-pressed")) return false;
+    if(el.tagName==="BUTTON"&&el.type==="submit") return false;
+    if(el.id&&ID_NAVIGASI.indexOf(el.id)>=0) return true;
+    return false;
+  }
+  function kunciTombol(el){
+    if(!el||el.nodeType!==1) return null;
+    if(el.id) return "id:"+el.id;
+    return null;
+  }
+  function terapkanDariSimpanan(){
+    var simpan=bacaSet();
+    var daftar=Object.keys(simpan);
+    if(!daftar.length) return;
+    var ada={}; daftar.forEach(function(k){ ada[k]=1; });
+    document.querySelectorAll("button, a").forEach(function(el){
+      if(!bolehDitandai(el)) return;
+      var k=kunciTombol(el);
+      if(k&&ada[k]) el.classList.add("sudah-diklik");
+    });
+  }
+  document.addEventListener("click", function(ev){
+    var t=ev.target&&ev.target.closest?ev.target.closest("button, a"):null;
+    if(!t||!document.contains(t)) return;
+    if(!bolehDitandai(t)) return;
+    t.classList.add("sudah-diklik");
+    var k=kunciTombol(t);
+    if(!k) return; /* tanpa kunci stabil: hanya sesi ini saja */
+    var simpan=bacaSet();
+    if(!simpan[k]){ simpan[k]=1; simpanSet(simpan); }
+  }, true);
+  terapkanDariSimpanan();
+  /* Tombol yang dibuat belakangan oleh JS ikut ditandai ulang begitu
+     muncul — dijadwalkan sekali per gugus perubahan. */
+  var terjadwal=false;
+  function jadwalkanTerapkan(){
+    if(terjadwal) return; terjadwal=true;
+    setTimeout(function(){ terjadwal=false; terapkanDariSimpanan(); }, 300);
+  }
+  if(window.MutationObserver){
+    var mo=new MutationObserver(function(){ jadwalkanTerapkan(); });
+    mo.observe(document.body, {childList:true, subtree:true});
+  }
+  window.__tombolDiklik={kunci:kunciTombol, boleh:bolehDitandai, terapkan:terapkanDariSimpanan, kunciSimpan:KUNCI_TOMBOL};
+})();
 </script>
 </body>
 </html>
