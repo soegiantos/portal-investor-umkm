@@ -26,7 +26,6 @@ label{display:block;font-size:14px;margin:12px 0 4px;color:var(--text)}
 input,select,textarea{width:100%;background:#10131a;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px 12px;font-size:15px;font-family:inherit}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--gold-dim);border-color:var(--gold)}
 textarea{min-height:84px;resize:vertical}
-select[multiple]{min-height:130px}
 button{cursor:pointer;font-family:inherit}
 .btn{display:inline-block;background:var(--gold);color:#171207;border:0;border-radius:999px;padding:12px 20px;font-size:15px;font-weight:700;margin-top:14px;min-height:48px;box-shadow:var(--shadow);transition:background .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease,filter .18s ease}
 .btn:hover{filter:brightness(1.07);transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.4),0 14px 28px -12px rgba(0,0,0,.65)}
@@ -73,7 +72,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 .status-pill{display:inline-block;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700}
 .status-baru{background:#26200f;color:#f0d48a;border:1px solid var(--gold-dim)}
 .status-diterima{background:#12291a;color:var(--ok);border:1px solid #2c5a3a}
-.status-ditolak{background:#2b1a1a;color:#e08f8f;border:1px solid #5a2c2c}
+.status-ditolak{background:#232733;color:#c9c4ba;border:1px solid #3a3f4d}
+.ceklis-gulir{max-height:220px;overflow-y:auto;border:1px solid var(--line);border-radius:9px;padding:4px 12px}
+.btn:disabled{opacity:.55;cursor:wait}
 .ceklis label{display:flex;gap:8px;align-items:flex-start;margin:7px 0;font-size:14.5px}
 .ceklis input{width:auto;margin-top:3px}
 .popup-latar{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
@@ -112,7 +113,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
     <label for="msk-email">Email</label>
     <input id="msk-email" type="email" placeholder="contoh: nama@email.com" autocomplete="email">
     <label for="msk-sandi">Kata sandi</label>
-    <input id="msk-sandi" type="password" placeholder="Minimal 6 karakter" autocomplete="current-password">
+    <input id="msk-sandi" type="password" placeholder="Kata sandi Anda" autocomplete="current-password">
     <p class="kecil">Kata sandi ini khusus untuk aplikasi ini, bukan kata sandi email Anda.</p>
     <button class="btn" id="btn-masuk" type="button">Masuk</button>
     <button class="btn-ghost" id="btn-ke-daftar" type="button">Daftar sebagai investor</button>
@@ -122,6 +123,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
   <div class="card" id="kartu-daftar" style="display:none">
     <h2>Daftar sebagai investor</h2>
     <p class="muted">Setelah daftar, kami mengirim tautan konfirmasi ke email Anda. Konfirmasi dulu sebelum masuk pertama.</p>
+    <p class="muted">Setelah daftar dan konfirmasi email, akun Anda masih perlu disetujui pemilik aplikasi sebelum bisa masuk.</p>
     <label for="dft-email">Email</label>
     <input id="dft-email" type="email" placeholder="contoh: nama@email.com" autocomplete="email">
     <label for="dft-sandi">Kata sandi</label>
@@ -177,20 +179,21 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 <section class="layar" id="layar-profil">
   <div class="card">
     <h2>Profil investor</h2>
-    <p class="muted">Lengkapi profil Anda. Data ini dipakai agar pemilik usaha tahu siapa yang menyatakan minat.</p>
+    <p class="muted">Lengkapi profil Anda. Data ini dipakai agar pemilik usaha tahu siapa yang menyatakan minat. Boleh dilewati dulu — profil baru diminta saat Anda menyatakan minat.</p>
     <label for="pf-nama">Nama lengkap</label>
     <input id="pf-nama" type="text" placeholder="contoh: Budi Santoso">
     <label for="pf-lembaga">Lembaga / perusahaan (boleh dikosongkan)</label>
     <input id="pf-lembaga" type="text" placeholder="contoh: Koperasi Maju Bersama">
     <label>Fokus sektor (boleh lebih dari satu)</label>
     <div class="ceklis" id="pf-sektor"></div>
-    <label for="pf-provinsi">Fokus provinsi (boleh lebih dari satu)</label>
-    <select id="pf-provinsi" multiple></select>
-    <p class="kecil">Pilih dengan menahan tombol Ctrl (Windows) atau Cmd (Mac) saat mengeklik.</p>
+    <label>Fokus provinsi (boleh lebih dari satu)</label>
+    <div class="ceklis ceklis-gulir" id="pf-provinsi"></div>
+    <p class="kecil" id="pf-provinsi-hitung">0 provinsi dipilih</p>
     <label for="pf-kode">Kode marketing (jika ada)</label>
     <input id="pf-kode" type="text" placeholder="contoh: UMKM30" maxlength="6" autocomplete="off" style="text-transform:uppercase">
     <p class="kecil">Opsional — isi hanya bila Anda mendapat kode dari tim marketing.</p>
     <button class="btn" id="btn-simpan-profil" type="button">Simpan profil</button>
+    <button class="btn-ghost" id="btn-lewati-profil" type="button">Lewati dulu</button>
   </div>
 </section>
 
@@ -258,12 +261,12 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
   </div>
   <div class="card" id="kartu-minat">
     <h2>Nyatakan minat</h2>
-    <p class="muted">Pesan Anda diteruskan ke pemilik usaha. Pemilik yang memutuskan menerima atau menolak.</p>
+    <p class="muted">Minat Anda tersimpan dan akan dilihat pemilik usaha di layar "Minat masuk" di aplikasinya. Pemilik yang memutuskan menerima atau menolak.</p>
     <div id="minat-form">
       <label for="minat-pesan">Pesan untuk pemilik (boleh dikosongkan)</label>
       <textarea id="minat-pesan" placeholder="contoh: Saya tertarik bekerja sama. Bolehkah kita berdiskusi lebih lanjut?"></textarea>
       <label for="minat-dana">Dana investasi yang diminati (Rp, boleh dikosongkan)</label>
-      <input id="minat-dana" type="number" min="0" step="100000" placeholder="contoh: 100000000">
+      <input id="minat-dana" type="text" inputmode="numeric" autocomplete="off" placeholder="contoh: 100.000.000">
       <button class="btn" id="btn-kirim-minat" type="button">Kirim minat saya</button>
     </div>
     <div id="minat-status" style="display:none"></div>
@@ -274,7 +277,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 <section class="layar" id="layar-minat">
   <div class="card">
     <h2>Minat saya</h2>
-    <p class="muted">Daftar minat kerjasama investasi yang pernah Anda nyatakan, beserta jawabannya.</p>
+    <p class="muted">Daftar minat kerjasama investasi yang pernah Anda nyatakan, beserta jawaban pemilik bila ada.</p>
+    <button class="btn-ghost btn-kecil" id="btn-muat-ulang-minat" type="button">Muat ulang</button>
   </div>
   <div id="wadah-minat"></div>
   <div class="tengah"><button class="btn-ghost" id="btn-minat-ke-daftar" type="button">Kembali ke daftar usaha</button></div>
@@ -477,6 +481,7 @@ var daftarNyata = [];     // baris listing_investor (aktif)
 var minatSaya = [];       // baris minat_investor milik pengguna
 var detailAktif = null;   // listing yang sedang dibuka
 var detailContoh = false;
+var mintaProfilUntukMinat = false; // simpan profil lalu kembali ke detail
 var cloudBelumSiap = false;
 
 /* ---------- util ---------- */
@@ -490,6 +495,28 @@ function fmtRp(n){
   return "Rp" + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 function fmtSkor(n){ return (n == null || n === "") ? "—" : String(n); }
+/* Tanggal tampil "15 Nov 2026", bukan ISO mentah "2026-11-15". */
+var BULAN_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+function fmtTanggal(iso){
+  var d = new Date(iso);
+  if(isNaN(d.getTime())) return String(iso || "—").slice(0, 10);
+  return d.getDate() + " " + BULAN_ID[d.getMonth()] + " " + d.getFullYear();
+}
+/* Level kematangan di data nyata bernilai 0–4 (0 Bertahan … 4 Siap
+   Ekspansi, dihitung dari skor kesehatan usaha di aplikasi utama).
+   Di luar jangkauan itu, tampilkan label aman, bukan angka mentah. */
+var MAT_NAMA = ["Bertahan","Tercatat","Terukur","Tumbuh","Siap Ekspansi"];
+function labelKematangan(v){
+  var n = Number(v);
+  if(!isFinite(n) || Math.floor(n) !== n || n < 0 || n > 4) return "Belum dapat ditentukan";
+  return "Level " + n + " — " + MAT_NAMA[n];
+}
+/* Pemisah ribuan saat mengetik (mis. 100000000 -> 100.000.000). */
+function formatRibuan(teks){
+  var angka = String(teks || "").replace(/[^0-9]/g, "");
+  if(!angka) return "";
+  return angka.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
 function labelSektor(k){ return SEKTOR[k] || k || "—"; }
 function labelKebutuhan(k){ return KEBUTUHAN_LABEL[k] || k; }
 function labelLevel(l){ return l || "—"; }
@@ -661,7 +688,7 @@ async function setelahMasuk(user){
     if(akses.alasan === "setup"){
       popup("Fitur ini belum aktif", "Fitur ini belum aktif — pengaturan cloud belum dijalankan. Silakan hubungi pemilik aplikasi.");
     }else{
-      popup("Belum terdaftar", "Akun ini belum terdaftar sebagai investor — hubungi pemilik aplikasi.");
+      popup("Akun Anda belum disetujui pemilik", "Setelah daftar dan konfirmasi email, akun investor masih perlu disetujui pemilik aplikasi sebelum bisa masuk. Bila Anda sudah mendaftar, tunggu persetujuan pemilik — atau hubungi pemilik aplikasi.");
     }
     tampilkanLayar("masuk");
     return {ok:false, ditolak:true, alasan:akses.alasan};
@@ -685,13 +712,25 @@ function isiPilihanProfil(){
     lab.appendChild(document.createTextNode(" " + SEKTOR[k]));
     wadah.appendChild(lab);
   });
-  var sel = el("pf-provinsi");
-  sel.innerHTML = "";
+  /* Fokus provinsi: daftar centang seperti fokus sektor — bisa diketuk
+     di HP, tanpa menahan Ctrl/Cmd. */
+  var wadahP = el("pf-provinsi");
+  wadahP.innerHTML = "";
   Object.keys(WILAYAH).forEach(function(p){
-    var op = document.createElement("option");
-    op.value = p; op.textContent = p;
-    sel.appendChild(op);
+    var lab = document.createElement("label");
+    var cb = document.createElement("input");
+    cb.type = "checkbox"; cb.value = p; cb.className = "pf-provinsi-cb";
+    cb.addEventListener("change", perbaruiHitungProvinsi);
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(" " + p));
+    wadahP.appendChild(lab);
   });
+  perbaruiHitungProvinsi();
+}
+function perbaruiHitungProvinsi(){
+  var n = provinsiTerpilih().length;
+  var t = el("pf-provinsi-hitung");
+  if(t) t.textContent = n + " provinsi dipilih";
 }
 function sektorTerpilih(){
   var out = [];
@@ -700,8 +739,7 @@ function sektorTerpilih(){
 }
 function provinsiTerpilih(){
   var out = [];
-  var sel = el("pf-provinsi");
-  for(var i = 0; i < sel.options.length; i++){ if(sel.options[i].selected) out.push(sel.options[i].value); }
+  document.querySelectorAll(".pf-provinsi-cb:checked").forEach(function(cb){ out.push(cb.value); });
   return out;
 }
 
@@ -759,6 +797,11 @@ async function simpanProfil(){
   }
   profil = {id: pengguna.id, nama: nama, lembaga: lembaga, fokus_sektor: fs, fokus_provinsi: fp, kode_marketing: kodeMk || null};
   aturBarAkun();
+  if(mintaProfilUntukMinat && detailAktif){
+    mintaProfilUntukMinat = false;
+    bukaDetail(detailAktif, detailContoh);
+    return;
+  }
   await bukaDaftar();
 }
 </script>
@@ -892,7 +935,7 @@ function kartuListing(l, isContoh){
   html += '<div class="meta">' + esc(l.kota || "—") + ', ' + esc(namaWilayah(l.provinsi)) + ' · ' + esc(labelLevel(l.level)) + '</div>';
   html += '<div class="skor">';
   html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(l.skor_kesehatan)) + '</div><div class="nama">Kesehatan usaha</div></div>';
-  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(l.skor_siap_investasi)) + '</div><div class="nama">Siap Investasi</div></div>';
+  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(l.skor_siap_investasi)) + '</div><div class="nama">Skor Siap Investasi</div></div>';
   html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(l.skor_konsistensi)) + '</div><div class="nama">Konsistensi</div></div>';
   html += '</div>';
   html += '<div class="valuasi">Rentang valuasi: <span>' + esc(fmtRp(l.valuasi_min)) + ' – ' + esc(fmtRp(l.valuasi_max)) + '</span></div>';
@@ -901,6 +944,7 @@ function kartuListing(l, isContoh){
     kes.forEach(function(k){ html += '<span class="tag">' + esc(labelKebutuhan(k)) + '</span>'; });
     html += '</div>';
   }
+  html += '<div class="kecil" style="margin-top:12px;color:var(--gold)">Lihat detail ›</div>';
   d.innerHTML = html;
   d.addEventListener("click", function(){ bukaDetail(l, isContoh); });
   return d;
@@ -951,8 +995,11 @@ function minatUntukListing(listingId){
 function perbaruiStatusMinat(){
   var form = el("minat-form"), status = el("minat-status");
   if(detailContoh){
-    form.style.display = "block";
-    status.style.display = "none";
+    /* U-B25: di detail CONTOH, formulir minat disembunyikan — pengguna
+       tidak dibiarkan mengisi lalu baru ditolak sesudah kirim. */
+    form.style.display = "none";
+    status.style.display = "block";
+    status.innerHTML = '<p class="muted">Ini data contoh — minat tidak bisa dinyatakan di sini.</p>';
     return;
   }
   var sudah = detailAktif ? minatUntukListing(detailAktif.id) : null;
@@ -960,7 +1007,7 @@ function perbaruiStatusMinat(){
     form.style.display = "none";
     status.style.display = "block";
     var st = STATUS_MINAT[sudah.status] || STATUS_MINAT.baru;
-    status.innerHTML = '<p><span class="status-pill ' + st.kelas + '">' + esc(st.label) + '</span></p><p class="muted">Anda sudah menyatakan minat pada usaha ini' + (sudah.dana_diminati ? ' dengan dana ' + esc(fmtRp(sudah.dana_diminati)) : '') + '. Jawaban pemilik akan tampil di layar "Minat saya".</p>';
+    status.innerHTML = '<p><span class="status-pill ' + st.kelas + '">' + esc(st.label) + '</span></p><p class="muted">Anda sudah menyatakan minat pada usaha ini' + (sudah.dana_diminati ? ' dengan dana ' + esc(fmtRp(sudah.dana_diminati)) : '') + '. Bila pemilik menjawab, jawabannya akan tampil di layar "Minat saya".</p>';
   } else {
     form.style.display = "block";
     status.style.display = "none";
@@ -974,29 +1021,50 @@ async function kirimMinat(){
   }
   if(!pengguna){ popup("Masuk dulu", "Masuk sebagai investor untuk menyatakan minat pada usaha ini."); tampilkanLayar("masuk"); return; }
   if(!sb){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); return; }
+  /* U-B22: profil boleh dilewati saat masuk daftar, tapi wajib diisi
+     saat menyatakan minat — pemilik perlu tahu siapa yang berminat. */
+  if(!profil){
+    mintaProfilUntukMinat = true;
+    popup("Lengkapi profil dulu", "Isi profil investor Anda agar pemilik usaha tahu siapa yang menyatakan minat.");
+    tampilkanLayar("profil");
+    return;
+  }
   var pesan = el("minat-pesan").value.trim();
-  var danaTxt = el("minat-dana").value.trim();
+  var danaTxt = el("minat-dana").value.replace(/[^0-9]/g, "");
   var dana = danaTxt === "" ? null : Number(danaTxt);
   if(danaTxt !== "" && (!isFinite(dana) || dana < 0)){ popup("Dana belum benar", "Isi dana investasi dengan angka yang benar, atau kosongkan bila belum ada angka."); return; }
   var baris = {
     listing_id: detailAktif.id,
     investor_id: pengguna.id,
     investor_nama: (profil && profil.nama) ? profil.nama : pengguna.email,
+    /* Lembaga dari profil investor sendiri — pemilik tidak bisa membaca
+       investor_profil (RLS), jadi lembaga ikut tersimpan di minat ini. */
+    lembaga: (profil && profil.lembaga) ? profil.lembaga : null,
     pesan: pesan || null,
     dana_diminati: dana
   };
-  var hasil = await sb.from("minat_investor").insert([baris]);
+  /* U-B36: tombol dimatikan + teks "Mengirim…" selama insert berjalan. */
+  var tombol = el("btn-kirim-minat");
+  tombol.disabled = true;
+  tombol.textContent = "Mengirim…";
+  var hasil;
+  try {
+    hasil = await sb.from("minat_investor").insert([baris]);
+  } finally {
+    tombol.disabled = false;
+    tombol.textContent = "Kirim minat saya";
+  }
   if(hasil.error){
     var ramah = pesanErrorRamah(hasil.error);
     if(ramah === "BELUM_AKTIF"){ popup("Fitur ini belum aktif", "Fitur ini belum aktif — pengaturan cloud belum dijalankan. Coba lagi nanti."); return; }
     popup("Minat belum terkirim", ramah);
     return;
   }
-  minatSaya.push({listing_id: baris.listing_id, investor_id: baris.investor_id, investor_nama: baris.investor_nama, pesan: baris.pesan, dana_diminati: baris.dana_diminati, status: "baru", dibuat_pada: new Date().toISOString()});
+  minatSaya.push({listing_id: baris.listing_id, investor_id: baris.investor_id, investor_nama: baris.investor_nama, lembaga: baris.lembaga, pesan: baris.pesan, dana_diminati: baris.dana_diminati, status: "baru", dibuat_pada: new Date().toISOString()});
   el("minat-pesan").value = "";
   el("minat-dana").value = "";
   perbaruiStatusMinat();
-  popup("Minat terkirim", "Minat Anda sudah diteruskan ke pemilik usaha. Statusnya: Menunggu jawaban pemilik.");
+  popup("Minat terkirim", "Minat Anda sudah tersimpan. Pemilik usaha akan melihatnya di layar 'Minat masuk' di aplikasinya — bila pemilik berminat, ia akan menghubungi Anda.");
 }
 
 /* ---------- minat saya ---------- */
@@ -1029,12 +1097,15 @@ function renderMinatSaya(){
     html += '<p style="margin-top:12px"><span class="status-pill ' + st.kelas + '">' + esc(st.label) + '</span></p>';
     if(m.dana_diminati) html += '<p class="muted">Dana yang diminati: ' + esc(fmtRp(m.dana_diminati)) + '</p>';
     if(m.pesan) html += '<p class="muted">Pesan Anda: ' + esc(m.pesan) + '</p>';
-    if(m.dibuat_pada) html += '<p class="kecil">Dinyatakan pada ' + esc(String(m.dibuat_pada).slice(0, 10)) + '</p>';
+    if(m.dibuat_pada) html += '<p class="kecil">Dinyatakan pada ' + esc(fmtTanggal(m.dibuat_pada)) + '</p>';
     d.innerHTML = html;
     wadah.appendChild(d);
   });
 }
-function bukaMinatSaya(){
+/* "Minat saya" selalu dimuat ulang dari cloud saat layar dibuka —
+   jangan pakai cache; ada juga tombol "Muat ulang" di layar itu. */
+async function bukaMinatSaya(){
+  await muatMinatSaya();
   renderMinatSaya();
   tampilkanLayar("minat");
 }
@@ -1079,13 +1150,12 @@ function tampilkanSnapshot(s){
   html += '<dt>Wilayah</dt><dd>' + esc((s.kota || "—") + ", " + namaWilayah(s.provinsi)) + '</dd>';
   html += '<dt>Level usaha</dt><dd>' + esc(labelLevel(s.level)) + '</dd>';
   if(s.level_kematangan != null){
-    var mat = ["Bertahan", "Tercatat", "Terukur", "Tumbuh", "Siap Ekspansi"];
-    html += '<dt>Level kematangan</dt><dd>' + esc(mat[s.level_kematangan] || String(s.level_kematangan)) + '</dd>';
+    html += '<dt>Level kematangan</dt><dd>' + esc(labelKematangan(s.level_kematangan)) + '</dd>';
   }
   html += '</dl>';
   html += '<div class="skor">';
   html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.kesehatan)) + '</div><div class="nama">Kesehatan usaha</div></div>';
-  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.siap_investasi)) + '</div><div class="nama">Siap Investasi</div></div>';
+  html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.siap_investasi)) + '</div><div class="nama">Skor Siap Investasi</div></div>';
   html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.konsistensi)) + '</div><div class="nama">Konsistensi</div></div>';
   if(skor.kesehatan_keuangan != null) html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.kesehatan_keuangan)) + '</div><div class="nama">Kesehatan keuangan</div></div>';
   if(skor.legalitas != null) html += '<div class="kotak-skor"><div class="angka">' + esc(fmtSkor(skor.legalitas)) + '</div><div class="nama">Legalitas</div></div>';
@@ -1097,14 +1167,24 @@ function tampilkanSnapshot(s){
   if(sak.pendapatan_per_bulan != null) html += '<dt>Pendapatan per bulan</dt><dd>' + esc(fmtRp(sak.pendapatan_per_bulan)) + '</dd>';
   if(sak.laba_bersih_per_bulan != null) html += '<dt>Laba bersih per bulan</dt><dd>' + esc(fmtRp(sak.laba_bersih_per_bulan)) + '</dd>';
   if(sak.aset_bersih != null) html += '<dt>Aset bersih</dt><dd>' + esc(fmtRp(sak.aset_bersih)) + '</dd>';
-  if(s.dibuat_pada) html += '<dt>Ringkasan dibuat</dt><dd>' + esc(String(s.dibuat_pada).slice(0, 10)) + '</dd>';
+  if(s.dibuat_pada) html += '<dt>Ringkasan dibuat</dt><dd>' + esc(fmtTanggal(s.dibuat_pada)) + '</dd>';
   html += '</dl>';
   if(Array.isArray(s.jejak_audit) && s.jejak_audit.length){
-    html += '<h3 style="margin-top:16px">Jejak penilaian</h3><ul class="jejak">';
+    /* Jejak penilaian: lewati entri tanpa teks/keterangan — jangan
+       tampilkan JSON mentah. */
+    var jejakBersih = [];
     s.jejak_audit.forEach(function(j){
-      html += '<li>' + esc(typeof j === "object" ? (j.teks || j.keterangan || JSON.stringify(j)) : j) + '</li>';
+      var teks = (j && typeof j === "object") ? (j.teks || j.keterangan || "") : String(j == null ? "" : j);
+      teks = String(teks).trim();
+      if(teks) jejakBersih.push(teks);
     });
-    html += '</ul>';
+    if(jejakBersih.length){
+      html += '<h3 style="margin-top:16px">Jejak penilaian</h3><ul class="jejak">';
+      jejakBersih.forEach(function(t){
+        html += '<li>' + esc(t) + '</li>';
+      });
+      html += '</ul>';
+    }
   }
   html += '<p class="kecil" style="margin-top:14px">Snapshot ini dibagikan atas izin pemilik usaha dan hanya untuk dibaca. Kontak pemilik dan laporan transaksi tidak ditampilkan.</p>';
   el("bg-badan").innerHTML = html;
@@ -1125,12 +1205,17 @@ function pasangEvent(){
   el("btn-lupa-ke-masuk").addEventListener("click", function(){ tampilkanLayar("masuk"); });
   el("btn-simpan-sandi").addEventListener("click", simpanSandiBaru);
   el("btn-simpan-profil").addEventListener("click", simpanProfil);
+  el("btn-lewati-profil").addEventListener("click", function(){ bukaDaftar(); });
   el("btn-keluar").addEventListener("click", keluar);
   el("btn-nav-daftar").addEventListener("click", bukaDaftar);
   el("btn-nav-minat").addEventListener("click", bukaMinatSaya);
+  el("btn-muat-ulang-minat").addEventListener("click", async function(){ await muatMinatSaya(); renderMinatSaya(); });
   el("btn-minat-ke-daftar").addEventListener("click", bukaDaftar);
   el("btn-detail-kembali").addEventListener("click", bukaDaftar);
   el("btn-kirim-minat").addEventListener("click", kirimMinat);
+  el("minat-dana").addEventListener("input", function(){
+    el("minat-dana").value = formatRibuan(el("minat-dana").value);
+  });
   el("btn-bagikan-ke-masuk").addEventListener("click", function(){ tampilkanLayar("masuk"); });
   el("btn-lihat-contoh").addEventListener("click", function(){
     tampilkanContoh(true);
@@ -1194,7 +1279,11 @@ window.__INVESTOR__ = {
   setSb: function(m){ sb = m; },
   kirimReset: kirimReset,
   bukaMinatSaya: bukaMinatSaya,
+  tampilkanSnapshot: tampilkanSnapshot,
   fmtRp: fmtRp,
+  fmtTanggal: fmtTanggal,
+  labelKematangan: labelKematangan,
+  formatRibuan: formatRibuan,
   CONTOH_LISTING: CONTOH_LISTING,
   setPengguna: function(u, p){ pengguna = u; profil = p || null; aturBarAkun(); },
   setDaftar: function(rows){ daftarNyata = rows; terapkanFilter(); }
