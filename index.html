@@ -86,6 +86,17 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 .tengah{text-align:center}
 .jejak{font-size:13.5px;color:var(--muted);padding-left:18px}
 .jejak li{margin:3px 0}
+/* Lencana "Pesan • N" di bilah atas (emas, pill) + utas tanya jawab minat */
+.lencana-pesan{background:var(--gold);color:#171207;border:1px solid var(--gold);border-radius:999px;padding:10px 16px;font-size:14px;font-weight:700;min-height:48px;box-shadow:var(--shadow)}
+.lencana-pesan:active{transform:scale(.98);filter:brightness(.94)}
+.utas{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.pesan{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+.pesan-keluar{border-color:var(--gold-dim)}
+.pesan-nama{font-size:13.5px;font-weight:700}
+.pesan-waktu{font-size:12.5px;color:var(--muted)}
+.pesan-isi{margin-top:4px;font-size:14.5px;white-space:pre-wrap;overflow-wrap:break-word}
+.lencana-belum-dibaca{display:inline-block;background:#26200f;color:var(--gold);border:1px solid var(--gold-dim);border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:700;margin-left:6px}
+.hitung-karakter{font-size:12.5px;color:var(--muted);text-align:right;margin-top:4px}
 </style>
 </head>
 <body>
@@ -99,6 +110,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 <div class="bar-akun" id="bar-akun">
   <div class="siapa" id="bar-akun-siapa"></div>
   <div class="tombol">
+    <button class="lencana-pesan" id="lencana-pesan" type="button" style="display:none">Pesan • 0</button>
     <button class="btn-ghost" id="btn-nav-daftar" type="button">Daftar usaha</button>
     <button class="btn-ghost" id="btn-nav-minat" type="button">Minat saya</button>
     <button class="btn-ghost" id="btn-keluar" type="button">Keluar</button>
@@ -483,6 +495,9 @@ var detailAktif = null;   // listing yang sedang dibuka
 var detailContoh = false;
 var mintaProfilUntukMinat = false; // simpan profil lalu kembali ke detail
 var cloudBelumSiap = false;
+var utasPesan = {};        // minatId -> array pesan dari pesan_konteks
+var pesanBelumDibaca = 0;  // jumlah untuk lencana "Pesan • N"
+var fiturPesan = null;     // null = belum tahu, true = aktif, false = belum aktif di cloud
 
 /* ---------- util ---------- */
 function el(id){ return document.getElementById(id); }
@@ -672,6 +687,8 @@ async function simpanSandiBaru(){
 async function keluar(){
   if(sb){ try { await sb.auth.signOut(); } catch(e){} }
   pengguna = null; profil = null; daftarNyata = []; minatSaya = []; detailAktif = null;
+  utasPesan = {}; pesanBelumDibaca = 0; fiturPesan = null;
+  perbaruiLencanaPesan();
   aturBarAkun();
   tampilkanLayar("masuk");
 }
@@ -695,7 +712,7 @@ async function setelahMasuk(user){
   }
   await muatProfil();
   aturBarAkun();
-  if(!profil){ tampilkanLayar("profil"); return {ok:true}; }
+  if(!profil){ perbaruiLencanaPesan(); tampilkanLayar("profil"); return {ok:true}; }
   await bukaDaftar();
   return {ok:true};
 }
@@ -842,6 +859,7 @@ async function bukaDaftar(){
   tampilkanLayar("daftar");
   await muatDaftar();
   await muatMinatSaya();
+  perbaruiLencanaPesan();
 }
 
 async function muatDaftar(){
@@ -1060,11 +1078,162 @@ async function kirimMinat(){
     popup("Minat belum terkirim", ramah);
     return;
   }
-  minatSaya.push({listing_id: baris.listing_id, investor_id: baris.investor_id, investor_nama: baris.investor_nama, lembaga: baris.lembaga, pesan: baris.pesan, dana_diminati: baris.dana_diminati, status: "baru", dibuat_pada: new Date().toISOString()});
+  var barisLokal = {listing_id: baris.listing_id, investor_id: baris.investor_id, investor_nama: baris.investor_nama, lembaga: baris.lembaga, pesan: baris.pesan, dana_diminati: baris.dana_diminati, status: "baru", dibuat_pada: new Date().toISOString()};
+  minatSaya.push(barisLokal);
+  /* Muat ulang dari cloud supaya minat baru mendapat id-nya — id itu
+     dipakai sebagai konteks utas tanya jawab. Bila muat ulang gagal,
+     baris lokal tetap dipakai supaya status tetap tampil. */
+  await muatMinatSaya();
+  if(!minatUntukListing(baris.listing_id)) minatSaya.push(barisLokal);
   el("minat-pesan").value = "";
   el("minat-dana").value = "";
   perbaruiStatusMinat();
   popup("Minat terkirim", "Minat Anda sudah tersimpan. Pemilik usaha akan melihatnya di layar 'Minat masuk' di aplikasinya — bila pemilik berminat, ia akan menghubungi Anda.");
+}
+
+/* ---------- tanya jawab minat (investor <-> pemilik usaha) ----------
+   Utas hanya ada pada minat yang sudah dibuat investor ini (konteks
+   'minat', konteks_id = id minat). Pengiriman lewat RPC kirim_pesan
+   dengan p_penerima null — penerima diturunkan otomatis di server,
+   jadi aplikasi ini tidak pernah memegang kontak pemilik. Bila RPC
+   belum ada di cloud (SQL pesan belum dijalankan pemilik), tampilkan
+   pesan jujur "Fitur pesan belum aktif", bukan galat mentah. */
+function apakahErrorPesanBelumAktif(err){
+  var m = String((err && err.message) || err || "") + " " + String((err && err.code) || "");
+  return /does not exist|function .* does not|42P01|PGRST202/i.test(m);
+}
+function pesanRpcRamah(err){
+  var m = String((err && err.message) || "");
+  if(/Pesan (tidak boleh kosong|terlalu panjang)|Anda harus masuk|tidak berhak melihat utas|bukan investor atau pemilik|Penerima bukan pihak|tidak bisa mengirim pesan ke diri sendiri|Penerima pesan tidak dapat ditentukan/i.test(m)) return m;
+  return pesanErrorRamah(err);
+}
+/* Waktu pesan: "17 Nov 2026, 06:30" — tanggal Indonesia + jam. */
+function fmtWaktuPesan(iso){
+  var d = new Date(iso);
+  if(isNaN(d.getTime())) return String(iso || "—").slice(0, 10);
+  var jam = String(d.getHours()); if(jam.length < 2) jam = "0" + jam;
+  var mnt = String(d.getMinutes()); if(mnt.length < 2) mnt = "0" + mnt;
+  return d.getDate() + " " + BULAN_ID[d.getMonth()] + " " + d.getFullYear() + ", " + jam + ":" + mnt;
+}
+/* Lencana "Pesan • N" di bilah atas: hanya bila masuk dan N > 0.
+   RPC belum ada di cloud -> sembunyikan diam-diam (bukan galat). */
+async function perbaruiLencanaPesan(){
+  var l = el("lencana-pesan");
+  if(!l) return;
+  if(!sb || !pengguna || fiturPesan === false){ l.style.display = "none"; return; }
+  var hasil;
+  try { hasil = await sb.rpc("pesan_belum_dibaca"); }
+  catch(e){ hasil = {data: null, error: e}; }
+  if(hasil && hasil.error){
+    if(apakahErrorPesanBelumAktif(hasil.error)) fiturPesan = false;
+    l.style.display = "none";
+    return;
+  }
+  var n = Number((hasil && hasil.data) || 0);
+  if(!isFinite(n) || n <= 0){ pesanBelumDibaca = 0; l.style.display = "none"; return; }
+  pesanBelumDibaca = n;
+  l.textContent = "Pesan • " + n;
+  l.style.display = "";
+}
+async function muatUtas(minatId){
+  if(!sb || !pengguna || !minatId) return [];
+  if(fiturPesan === false) return utasPesan[String(minatId)] || [];
+  var hasil;
+  try { hasil = await sb.rpc("pesan_konteks", {p_konteks: "minat", p_konteks_id: String(minatId)}); }
+  catch(e){ hasil = {data: null, error: e}; }
+  if(hasil && hasil.error){
+    if(apakahErrorPesanBelumAktif(hasil.error)) fiturPesan = false;
+    return utasPesan[String(minatId)] || [];
+  }
+  fiturPesan = true;
+  var arr = (hasil && hasil.data) ? hasil.data : [];
+  if(!Array.isArray(arr)) arr = [];
+  utasPesan[String(minatId)] = arr;
+  return arr;
+}
+function renderUtas(minatId){
+  var wadah = el("utas-" + minatId);
+  if(!wadah) return;
+  var arr = utasPesan[String(minatId)] || [];
+  var saya = String(pengguna && pengguna.email || "").toLowerCase();
+  var html = "";
+  if(fiturPesan === false){
+    html += '<p class="muted">Fitur pesan belum aktif — pengaturan cloud belum dijalankan.</p>';
+  } else if(arr.length === 0){
+    html += '<p class="muted">Belum ada pesan di utas ini. Tanyakan hal yang ingin Anda ketahui sebelum pemilik memutuskan.</p>';
+  } else {
+    arr.forEach(function(p){
+      var masuk = String(p.pengirim_email || "").toLowerCase() !== saya;
+      html += '<div class="pesan' + (masuk ? "" : " pesan-keluar") + '">';
+      html += '<span class="pesan-nama">' + esc(p.pengirim_nama || "—") + '</span>';
+      if(masuk && p.dibaca === false) html += '<span class="lencana-belum-dibaca">Belum dibaca</span>';
+      html += ' <span class="pesan-waktu">' + esc(fmtWaktuPesan(p.dibuat_pada)) + '</span>';
+      html += '<div class="pesan-isi">' + esc(p.isi || "") + '</div>';
+      html += '</div>';
+    });
+  }
+  wadah.innerHTML = html;
+}
+/* Bila utas dibuka, pesan masuk yang belum dibaca ditandai sudah dibaca. */
+async function tandaiUtasDibaca(minatId){
+  if(!sb || !pengguna) return;
+  var arr = utasPesan[String(minatId)] || [];
+  var saya = String(pengguna && pengguna.email || "").toLowerCase();
+  var berubah = false;
+  for(var i = 0; i < arr.length; i++){
+    var p = arr[i];
+    if(p && p.dibaca === false && String(p.pengirim_email || "").toLowerCase() !== saya){
+      try {
+        var r = await sb.rpc("tandai_pesan_dibaca", {p_id: p.id});
+        if(r && !r.error){ p.dibaca = true; berubah = true; }
+      } catch(e){}
+    }
+  }
+  if(berubah) perbaruiLencanaPesan();
+}
+async function muatSemuaUtas(){
+  for(var i = 0; i < minatSaya.length; i++){
+    var m = minatSaya[i];
+    if(!m.id) continue;
+    await muatUtas(m.id);
+    renderUtas(m.id);
+    await tandaiUtasDibaca(m.id);
+    renderUtas(m.id);
+  }
+}
+function perbaruiHitungKarakter(minatId){
+  var ta = el("tulis-" + minatId), h = el("hitung-" + minatId);
+  if(ta && h) h.textContent = ta.value.length + "/500";
+}
+async function kirimPesanUtas(minatId){
+  var ta = el("tulis-" + minatId);
+  if(!ta || !minatId) return;
+  var isi = ta.value.trim();
+  if(!isi){ popup("Pesan masih kosong", "Tulis dulu pertanyaan Anda, lalu ketuk Kirim."); return; }
+  if(isi.length > 500){ popup("Pesan terlalu panjang", "Pesan maksimal 500 karakter. Pendekkan dulu pesan Anda, lalu kirim lagi."); return; }
+  if(!sb || !pengguna){ popup("Tidak dapat terhubung", "Periksa koneksi internet Anda, lalu coba lagi."); return; }
+  if(fiturPesan === false){ popup("Fitur pesan belum aktif", "Fitur pesan belum aktif — pengaturan cloud belum dijalankan. Coba lagi nanti."); return; }
+  var tombol = document.querySelector('[data-kirim-utas="' + minatId + '"]');
+  if(tombol){ tombol.disabled = true; tombol.textContent = "Mengirim…"; }
+  var hasil;
+  try { hasil = await sb.rpc("kirim_pesan", {p_konteks: "minat", p_konteks_id: String(minatId), p_penerima: null, p_isi: isi}); }
+  catch(e){ hasil = {data: null, error: e}; }
+  if(tombol){ tombol.disabled = false; tombol.textContent = "Kirim"; }
+  if(hasil.error){
+    if(apakahErrorPesanBelumAktif(hasil.error)){
+      fiturPesan = false;
+      renderUtas(minatId);
+      popup("Fitur pesan belum aktif", "Fitur pesan belum aktif — pengaturan cloud belum dijalankan. Coba lagi nanti.");
+      return;
+    }
+    popup("Pesan belum terkirim", pesanRpcRamah(hasil.error));
+    return;
+  }
+  ta.value = "";
+  perbaruiHitungKarakter(minatId);
+  await muatUtas(minatId);
+  renderUtas(minatId);
+  perbaruiLencanaPesan();
 }
 
 /* ---------- minat saya ---------- */
@@ -1098,15 +1267,52 @@ function renderMinatSaya(){
     if(m.dana_diminati) html += '<p class="muted">Dana yang diminati: ' + esc(fmtRp(m.dana_diminati)) + '</p>';
     if(m.pesan) html += '<p class="muted">Pesan Anda: ' + esc(m.pesan) + '</p>';
     if(m.dibuat_pada) html += '<p class="kecil">Dinyatakan pada ' + esc(fmtTanggal(m.dibuat_pada)) + '</p>';
+    /* Utas tanya jawab hanya untuk minat yang sudah dibuat (punya id).
+       Investor bertanya di sini sebelum pemilik memutuskan; balasan
+       pemilik tampil dengan nama usahanya sebagai pengirim. */
+    html += '<div class="utas">';
+    html += '<h3>Tanya jawab dengan pemilik usaha</h3>';
+    if(m.id){
+      html += '<div id="utas-' + esc(m.id) + '"><p class="muted">Memuat pesan…</p></div>';
+      html += '<label for="tulis-' + esc(m.id) + '">Tulis pertanyaan Anda</label>';
+      html += '<textarea id="tulis-' + esc(m.id) + '" maxlength="500" placeholder="contoh: Berapa lama usaha ini sudah berjalan?"></textarea>';
+      html += '<div class="hitung-karakter" id="hitung-' + esc(m.id) + '">0/500</div>';
+      html += '<button class="btn btn-kecil" type="button" data-kirim-utas="' + esc(m.id) + '">Kirim</button> ';
+      html += '<button class="btn-ghost btn-kecil" type="button" data-muat-utas="' + esc(m.id) + '">Muat ulang utas</button>';
+    } else {
+      html += '<p class="muted">Tanya jawab tersedia setelah minat Anda tersimpan.</p>';
+    }
+    html += '</div>';
     d.innerHTML = html;
     wadah.appendChild(d);
+    d.querySelectorAll("[data-kirim-utas]").forEach(function(b){
+      b.addEventListener("click", function(){ kirimPesanUtas(b.getAttribute("data-kirim-utas")); });
+    });
+    d.querySelectorAll("[data-muat-utas]").forEach(function(b){
+      b.addEventListener("click", async function(){
+        var id = b.getAttribute("data-muat-utas");
+        await muatUtas(id); renderUtas(id);
+        await tandaiUtasDibaca(id); renderUtas(id);
+        perbaruiLencanaPesan();
+      });
+    });
+    d.querySelectorAll("textarea[id^='tulis-']").forEach(function(ta){
+      ta.addEventListener("input", function(){ perbaruiHitungKarakter(ta.id.slice(6)); });
+    });
   });
 }
 /* "Minat saya" selalu dimuat ulang dari cloud saat layar dibuka —
-   jangan pakai cache; ada juga tombol "Muat ulang" di layar itu. */
-async function bukaMinatSaya(){
+   jangan pakai cache; ada juga tombol "Muat ulang" di layar itu.
+   Utas tanya jawab ikut dimuat dan pesan masuk yang belum dibaca
+   ditandai sudah dibaca saat layar dibuka. */
+async function segarkanMinatSaya(){
   await muatMinatSaya();
   renderMinatSaya();
+  await muatSemuaUtas();
+  await perbaruiLencanaPesan();
+}
+async function bukaMinatSaya(){
+  await segarkanMinatSaya();
   tampilkanLayar("minat");
 }
 </script>
@@ -1209,7 +1415,13 @@ function pasangEvent(){
   el("btn-keluar").addEventListener("click", keluar);
   el("btn-nav-daftar").addEventListener("click", bukaDaftar);
   el("btn-nav-minat").addEventListener("click", bukaMinatSaya);
-  el("btn-muat-ulang-minat").addEventListener("click", async function(){ await muatMinatSaya(); renderMinatSaya(); });
+  el("lencana-pesan").addEventListener("click", bukaMinatSaya);
+  /* Lencana diperbarui saat kembali ke tab/aplikasi. */
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden && pengguna) perbaruiLencanaPesan();
+  });
+  window.addEventListener("focus", function(){ if(pengguna) perbaruiLencanaPesan(); });
+  el("btn-muat-ulang-minat").addEventListener("click", async function(){ await segarkanMinatSaya(); });
   el("btn-minat-ke-daftar").addEventListener("click", bukaDaftar);
   el("btn-detail-kembali").addEventListener("click", bukaDaftar);
   el("btn-kirim-minat").addEventListener("click", kirimMinat);
@@ -1258,7 +1470,7 @@ async function init(){
 
 /* API kecil untuk pengujian otomatis (tidak dipakai pengguna) */
 window.__INVESTOR__ = {
-  get state(){ return {pengguna: pengguna, profil: profil, daftarNyata: daftarNyata, minatSaya: minatSaya, cloudBelumSiap: cloudBelumSiap, detailAktif: detailAktif, detailContoh: detailContoh, popupTerakhir: popupTerakhir}; },
+  get state(){ return {pengguna: pengguna, profil: profil, daftarNyata: daftarNyata, minatSaya: minatSaya, cloudBelumSiap: cloudBelumSiap, detailAktif: detailAktif, detailContoh: detailContoh, popupTerakhir: popupTerakhir, utasPesan: utasPesan, pesanBelumDibaca: pesanBelumDibaca, fiturPesan: fiturPesan}; },
   saringDanUrutkan: saringDanUrutkan,
   bukaDetail: bukaDetail,
   kirimMinat: kirimMinat,
@@ -1279,6 +1491,12 @@ window.__INVESTOR__ = {
   setSb: function(m){ sb = m; },
   kirimReset: kirimReset,
   bukaMinatSaya: bukaMinatSaya,
+  segarkanMinatSaya: segarkanMinatSaya,
+  muatUtas: muatUtas,
+  kirimPesanUtas: kirimPesanUtas,
+  perbaruiLencanaPesan: perbaruiLencanaPesan,
+  fmtWaktuPesan: fmtWaktuPesan,
+  setUtas: function(id, arr){ utasPesan[String(id)] = arr; renderUtas(id); },
   tampilkanSnapshot: tampilkanSnapshot,
   fmtRp: fmtRp,
   fmtTanggal: fmtTanggal,
@@ -1306,7 +1524,7 @@ init();
   /* Tombol bernama yang termasuk kelompok navigasi/penjelajahan
      (bukan aksi sekali pakai). ID di luar daftar ini tidak pernah
      ditandai emas. */
-  var ID_NAVIGASI=["btn-nav-daftar","btn-nav-minat","btn-detail-kembali","btn-minat-ke-daftar","btn-bagikan-ke-masuk"];
+  var ID_NAVIGASI=["btn-nav-daftar","btn-nav-minat","btn-detail-kembali","btn-minat-ke-daftar","btn-bagikan-ke-masuk","lencana-pesan"];
   function bacaSet(){ try{ var s=localStorage.getItem(KUNCI_TOMBOL); if(!s) return {}; var o=JSON.parse(s); return (o&&typeof o==="object")?o:{}; }catch(e){ return {}; } }
   function simpanSet(o){ try{ localStorage.setItem(KUNCI_TOMBOL, JSON.stringify(o)); }catch(e){} }
   function bolehDitandai(el){
